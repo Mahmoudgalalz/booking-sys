@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "booking-fincart",
   "private": true,
   "scripts": {
     "build": "turbo run build",
