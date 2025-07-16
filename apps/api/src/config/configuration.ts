@@ -25,6 +25,6 @@ export default () => ({
   },
   system: {
     baseUrl: process.env.BASE_URL,
-    FrontendUrl: process.env.FE_BASE_URL,
+    frontendUrl: process.env.FRONTEND_URL,
   },
 });
