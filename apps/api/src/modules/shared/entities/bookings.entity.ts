@@ -1,0 +1,60 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from './users.entity';
+import { TimeSlot } from './time-slots.entity';
+import { BookingStatus } from '../enums/booking.enum';
+import { PaymentStatus } from '../enums/payment.enum';
+
+@Entity('bookings')
+export class Booking {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({
+    type: 'enum',
+    enum: BookingStatus,
+    default: BookingStatus.PENDING,
+  })
+  status: string;
+
+  @Column('text', { nullable: true })
+  notes: string;
+
+  @Column('decimal', { precision: 10, scale: 2 })
+  totalAmount: number;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
+  paymentStatus: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  // Relations
+  @ManyToOne(() => User, (user) => user.bookings)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @Column()
+  userId: number;
+
+  @ManyToOne(() => TimeSlot, (timeSlot) => timeSlot.bookings)
+  @JoinColumn({ name: 'timeSlotId' })
+  timeSlot: TimeSlot;
+
+  @Column()
+  timeSlotId: number;
+}
