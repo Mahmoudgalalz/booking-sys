@@ -1,14 +1,17 @@
-# Turborepo starter
+# Booking FinCart System
 
-This Turborepo starter is maintained by the Turborepo core team.
+A comprehensive booking system built with NestJS (API) and React (Web) in a Turborepo monorepo structure.
 
-## Using this example
+## Overview
 
-Run the following command:
+This project is a service booking platform that allows users to book services from various providers. The system includes user management, provider profiles, service listings, time slot scheduling, and booking management.
 
-```sh
-npx create-turbo@latest
-```
+## Tech Stack
+
+- **Backend**: NestJS with TypeORM and PostgreSQL
+- **Frontend**: React with Vite, TailwindCSS, and Tanstack libraries
+- **Infrastructure**: Docker and Docker Compose
+- **Package Management**: pnpm and Turborepo
 
 ## What's inside?
 
@@ -16,11 +19,9 @@ This Turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- `api`: a [NestJS](https://nestjs.com/) backend application
+- `web`: a [React](https://react.dev/) frontend application with [Vite](https://vitejs.dev/)
+- `packages`: shared libraries and configurations
 
 Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 
@@ -31,105 +32,161 @@ This Turborepo has some additional tools already setup for you:
 - [TypeScript](https://www.typescriptlang.org/) for static type checking
 - [ESLint](https://eslint.org/) for code linting
 - [Prettier](https://prettier.io) for code formatting
+- [Docker](https://www.docker.com/) for containerization
+- [PostgreSQL](https://www.postgresql.org/) for database management
 
-### Build
+## Docker Setup
 
-To build all apps and packages, run the following command:
+### Prerequisites
 
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+### Running with Docker Compose
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd booking-fincart
 ```
-cd my-turborepo
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
+2. Start the application stack:
+
+```bash
+docker-compose up -d
+```
+
+This will start the following services:
+- PostgreSQL database (port 5432)
+- API backend (port 3005)
+- Web frontend (port 3000)
+
+3. Access the applications:
+   - Frontend: http://localhost:3000
+   - API: http://localhost:3005
+
+### Building Docker Images Manually
+
+If you want to build the Docker images separately:
+
+```bash
+# Build API image
+docker build -t booking-fincart-api -f ./apps/api/Dockerfile .
+
+# Build Web image
+docker build -t booking-fincart-web -f ./apps/web/Dockerfile .
+```
+
+## Database
+
+The system uses PostgreSQL for data storage. For detailed information about the database schema and relationships, see [DATABASE.md](./DATABASE.md).
+
+### Development Setup
+
+To run the applications without Docker for development:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development servers
+pnpm dev
+```
+
+### Build Commands
+
+To build all apps and packages:
+
+```bash
+# Using pnpm
+pnpm build
+
+# Using turbo directly
 turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+To build a specific app:
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+```bash
+# Build API only
+pnpm build --filter=api
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+# Build Web only
+pnpm build --filter=web
 ```
 
-### Develop
+### Development Commands
 
-To develop all apps and packages, run the following command:
+To run all apps in development mode:
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+pnpm dev
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+To run a specific app in development mode:
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+```bash
+# Run API only
+pnpm dev --filter=api
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+# Run Web only
+pnpm dev --filter=web
 ```
 
-### Remote Caching
+## Environment Configuration
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+### API Environment Variables
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+The API service requires the following environment variables:
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+DATABASE_HOST=postgres
+DATABASE_PORT=5432
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=booking_fincart
+JWT_SECRET=your_jwt_secret_here
+PORT=3005
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+These are already configured in the docker-compose.yml file for Docker deployment.
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+### Web Environment Variables
+
+The web application requires:
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+API_URL=http://api:3005
 ```
+
+## Database Migrations
+
+To run database migrations:
+
+```bash
+# In development
+cd apps/api
+pnpm migration:run
+
+# In Docker
+docker-compose exec api pnpm migration:run
+```
+
+## Features
+
+- User authentication and authorization
+- Role-based access control (user and provider roles)
+- Service provider profiles and verification
+- Service catalog with categories and pricing
+- Time slot scheduling and availability management
+- Booking system with status tracking
+- Payment status monitoring
 
 ## Useful Links
 
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [React Documentation](https://react.dev/)
+- [TypeORM Documentation](https://typeorm.io/)
+- [Docker Documentation](https://docs.docker.com/)
+- [Turborepo Documentation](https://turbo.build/repo/docs)
