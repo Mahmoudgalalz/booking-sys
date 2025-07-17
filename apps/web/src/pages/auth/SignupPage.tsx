@@ -1,20 +1,24 @@
 import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
-import { authService, RegisterData, ProviderData } from '../../lib/utils/auth-service';
+import { authService } from '../../lib/utils/auth-service';
+import type { RegisterData, ProviderData } from '../../lib/utils/auth-service';
 import { validateEmail, validatePassword, validateRequired } from '../../lib/utils/form-utils';
 
-enum SignupStep {
-  ROLE_SELECTION = 0,
-  BASIC_INFO = 1,
-  PROVIDER_INFO = 2,
-  COMPLETE = 3,
-}
+const SignupStep = {
+  ROLE_SELECTION: 0,
+  BASIC_INFO: 1,
+  PROVIDER_INFO: 2,
+  COMPLETE: 3,
+} as const;
+
+type SignupStep = typeof SignupStep[keyof typeof SignupStep];
 
 export default function SignupPage() {
   const [currentStep, setCurrentStep] = useState<SignupStep>(SignupStep.ROLE_SELECTION);
   const [selectedRole, setSelectedRole] = useState<number | null>(null);
-  const [basicInfo, setBasicInfo] = useState<Partial<RegisterData>>({});
+  // State for storing basic info before submitting
+  const [, setBasicInfo] = useState<Partial<RegisterData>>({});
   
   // Register mutation
   const registerMutation = useMutation({
@@ -37,7 +41,7 @@ export default function SignupPage() {
   });
   
   // Basic info form
-  const basicInfoForm = useForm<RegisterData>({
+  const basicInfoForm = useForm({
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -52,7 +56,7 @@ export default function SignupPage() {
   });
   
   // Provider info form
-  const providerInfoForm = useForm<ProviderData>({
+  const providerInfoForm = useForm({
     defaultValues: {
       bio: '',
       specialization: '',
@@ -126,9 +130,9 @@ export default function SignupPage() {
                         onBlur={field.handleBlur}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
                       />
-                      {field.state.meta.touchedErrors && (
+                      {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                         <div className="text-red-500 text-sm mt-1">
-                          {field.state.meta.touchedErrors}
+                          {field.state.meta.errors.join(', ')}
                         </div>
                       )}
                     </>
@@ -155,9 +159,9 @@ export default function SignupPage() {
                         onBlur={field.handleBlur}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
                       />
-                      {field.state.meta.touchedErrors && (
+                      {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                         <div className="text-red-500 text-sm mt-1">
-                          {field.state.meta.touchedErrors}
+                          {field.state.meta.errors.join(', ')}
                         </div>
                       )}
                     </>
@@ -186,9 +190,9 @@ export default function SignupPage() {
                         onBlur={field.handleBlur}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
                       />
-                      {field.state.meta.touchedErrors && (
+                      {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                         <div className="text-red-500 text-sm mt-1">
-                          {field.state.meta.touchedErrors}
+                          {field.state.meta.errors.join(', ')}
                         </div>
                       )}
                     </>
@@ -217,9 +221,9 @@ export default function SignupPage() {
                         onBlur={field.handleBlur}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
                       />
-                      {field.state.meta.touchedErrors && (
+                      {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                         <div className="text-red-500 text-sm mt-1">
-                          {field.state.meta.touchedErrors}
+                          {field.state.meta.errors.join(', ')}
                         </div>
                       )}
                     </>

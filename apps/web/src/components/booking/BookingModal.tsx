@@ -106,7 +106,7 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
       return { previousTimeSlots };
     },
     // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err, timeSlotId, context) => {
+    onError: (_err, _timeSlotId, context) => {
       queryClient.setQueryData(
         ['timeSlots', service.id, selectedDate],
         context?.previousTimeSlots

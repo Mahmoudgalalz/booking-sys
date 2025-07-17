@@ -433,7 +433,7 @@ export default function ProviderDashboard() {
       <Tabs 
         defaultValue="services" 
         value={activeTab} 
-        onValueChange={(value: Tab) => setActiveTab(value)}
+        onValueChange={(value: string) => setActiveTab(value as Tab)}
         className="w-full"
       >
         <TabsList className="mb-6">

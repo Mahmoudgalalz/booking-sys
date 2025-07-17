@@ -29,7 +29,7 @@ services:
       - NODE_ENV=production # change to development for development
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
-      - DATABASE_USERNAME=postgres
+      - DATABASE_USER=postgres
       - DATABASE_PASSWORD=postgres
       - DATABASE_NAME=booking_fincart
       - JWT_SECRET=a91d660b54414e59a91311310e94f91f568c172fdba72c3bbecba0f82c61f4b9

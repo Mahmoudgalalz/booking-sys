@@ -1,24 +1,3 @@
-import { FieldApi, useForm } from "@tanstack/react-form";
-
-/**
- * Custom error display component for form fields
- */
-export function FieldError({ field }: { field: FieldApi<any, any, any, any> }) {
-  return field.state.meta.touchedErrors ? (
-    <div className="text-sm text-red-500">{field.state.meta.touchedErrors}</div>
-  ) : null;
-}
-
-/**
- * Create a form with default configuration
- */
-export function createForm<TValues>(config: Parameters<typeof useForm<TValues>>[0]) {
-  return useForm<TValues>({
-    ...config,
-    defaultValues: config.defaultValues,
-  });
-}
-
 /**
  * Validate required fields
  */
