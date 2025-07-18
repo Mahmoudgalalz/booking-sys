@@ -48,6 +48,11 @@ export class User {
 
   @OneToMany(() => Provider, (provider) => provider.user)
   providers: Provider[];
+  
+  // Virtual getter for full name
+  get name(): string {
+    return `${this.firstName} ${this.lastName}`;
+  }
 
   @OneToMany(() => Booking, (booking) => booking.user)
   bookings: Booking[];

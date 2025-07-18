@@ -10,7 +10,6 @@ import {
 import { User } from './users.entity';
 import { TimeSlot } from './time-slots.entity';
 import { BookingStatus } from '../enums/booking.enum';
-import { PaymentStatus } from '../enums/payment.enum';
 
 @Entity('bookings')
 export class Booking {
@@ -27,15 +26,8 @@ export class Booking {
   @Column('text', { nullable: true })
   notes: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  totalAmount: number;
-
-  @Column({
-    type: 'enum',
-    enum: PaymentStatus,
-    default: PaymentStatus.PENDING,
-  })
-  paymentStatus: string;
+  @Column({ default: false })
+  reminderSent: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

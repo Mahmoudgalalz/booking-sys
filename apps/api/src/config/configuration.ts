@@ -10,11 +10,6 @@ export default () => ({
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_NAME,
   },
-  redis: {
-    host: process.env.REDIS_HOST,
-    port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
-    password: process.env.REDIS_PASSWORD,
-  },
   cors: {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
     credentials: process.env.CORS_CREDENTIALS ?? true,
@@ -26,5 +21,6 @@ export default () => ({
   system: {
     baseUrl: process.env.BASE_URL,
     frontendUrl: process.env.FRONTEND_URL,
+    uploadPath: process.env.UPLOAD_PATH ?? './uploads',
   },
 });
