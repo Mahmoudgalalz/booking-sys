@@ -5,16 +5,21 @@ import { useUserStore } from '../store/userStore';
 export const $fetch = createFetch({
   baseURL: 'http://localhost:3000',
   headers: {
-    'Content-Type': 'application/json',
-    get Authorization() {
-      const token = useUserStore.getState().token;
-      return token ? `Bearer ${token}` : undefined;
+    'Content-Type': 'application/json'
+  },
+  // Add authorization header to each request
+  onRequest: (request) => {
+    const token = useUserStore.getState().token;
+    if (token) {
+      request.headers.set('Authorization', `Bearer ${token}`);
     }
+    return request;
   },
   retry: {
     type: 'exponential',
     attempts: 3,
-    factor: 2, // Instead of delay, use factor for exponential backoff
+    baseDelay: 1000,
+    maxDelay: 5000
   },
 });
 
@@ -22,16 +27,21 @@ export const $fetch = createFetch({
 export const $fetchThrow = createFetch({
   baseURL: 'http://localhost:3000',
   headers: {
-    'Content-Type': 'application/json',
-    get Authorization() {
-      const token = useUserStore.getState().token;
-      return token ? `Bearer ${token}` : undefined;
+    'Content-Type': 'application/json'
+  },
+  // Add authorization header to each request
+  onRequest: (request) => {
+    const token = useUserStore.getState().token;
+    if (token) {
+      request.headers.set('Authorization', `Bearer ${token}`);
     }
+    return request;
   },
   retry: {
     type: 'exponential',
     attempts: 3,
-    factor: 2, // Instead of delay, use factor for exponential backoff
+    baseDelay: 1000,
+    maxDelay: 5000
   },
   throw: true, // This will throw errors instead of returning them
 });

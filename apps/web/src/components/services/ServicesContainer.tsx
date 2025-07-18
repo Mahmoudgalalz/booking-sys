@@ -1,25 +1,20 @@
 import { useState } from 'react';
 import { useServices } from '../../api/services';
-import { Pagination } from '../../components/common/Pagination';
-import { SearchBar } from '../../components/common/SearchBar';
-import { UserHeader } from '../../components/common/UserHeader';
-import { ServicesList } from '../../components/services/ServicesList';
-import BookingModal from '../../components/booking/BookingModal';
-import { useUserStore } from '../../store/userStore';
+import { ServicesList } from './ServicesList';
+import { Pagination } from '../common/Pagination';
+import { SearchBar } from '../common/SearchBar';
 import type { Service } from '../../api/services';
 
+interface ServicesContainerProps {
+  isProvider: boolean;
+  onBookService: (service: Service) => void;
+}
 
-
-export default function HomePage() {
+export function ServicesContainer({ isProvider, onBookService }: ServicesContainerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   
-  const { user } = useUserStore();
-  const isProvider = user?.role?.name === 'provider';
-  
-  // Fetch services with pagination and search using our API service
+  // Fetch services with pagination and search
   const servicesQuery = useServices(currentPage, searchTerm);
   
   // Handle search input change with reset to first page
@@ -33,22 +28,8 @@ export default function HomePage() {
     setCurrentPage(page);
   };
   
-  // Open booking modal for a service
-  const openBookingModal = (service: Service) => {
-    setSelectedService(service);
-    setIsBookingModalOpen(true);
-  };
-  
-  // Handle successful booking
-  const handleBookingSuccess = () => {
-    setIsBookingModalOpen(false);
-    // Could refresh services data here if needed
-  };
-  
   return (
-    <div className="container mx-auto p-4">
-      <UserHeader title="Available Services" />
-      
+    <>
       {/* Search bar */}
       <div className="mb-6">
         <SearchBar 
@@ -65,7 +46,7 @@ export default function HomePage() {
           isError={servicesQuery.isError}
           data={servicesQuery.data?.data}
           isProvider={isProvider}
-          onBookService={openBookingModal}
+          onBookService={onBookService}
         />
       </div>
       
@@ -77,15 +58,6 @@ export default function HomePage() {
           onPageChange={handlePageChange}
         />
       )}
-      
-      {/* Booking Modal */}
-      {isBookingModalOpen && selectedService && (
-        <BookingModal
-          service={selectedService}
-          onClose={() => setIsBookingModalOpen(false)}
-          onSuccess={handleBookingSuccess}
-        />
-      )}
-    </div>
+    </>
   );
 }
