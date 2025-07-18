@@ -32,13 +32,13 @@ export class AuthService {
   }
 
   async getProfile(id: number) {
-    return this.userRepository.findOne({ where: { id } });
+    return this.userRepository.findOne({ where: { id }, relations: ['role'] });
   }
 
   async login(data: LoginValidation) {
     const loggedInUser = await this.userRepository.findOne({
       where: { email: data.email },
-      relations: ['roles'],
+      relations: ['role'],
     });
     if(!loggedInUser) {
       throw new UnauthorizedException('User not found');

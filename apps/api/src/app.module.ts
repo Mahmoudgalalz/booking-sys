@@ -13,6 +13,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { AuthModule } from './modules/shared/auth/auth.module';
 import { SharedModule } from './modules/shared/shared.module';
+import { IsUniqueConstraint } from './modules/shared/decorators/validation/rules/unique.decorator';
+import { IsExistingConstraint } from './modules/shared/decorators/validation/rules/exists.decorator';
 
 @Module({
   imports: [
@@ -48,6 +50,7 @@ import { SharedModule } from './modules/shared/shared.module';
     SharedModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, IsUniqueConstraint, IsExistingConstraint],
+  exports: [IsUniqueConstraint]
 })
 export class AppModule {}

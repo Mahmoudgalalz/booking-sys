@@ -45,7 +45,8 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
 # Install production dependencies with node-linker=hoisted
 RUN pnpm config set node-linker hoisted && \
-    pnpm install --prod --frozen-lockfile
+    pnpm install --prod --frozen-lockfile && \
+    pnpm run seed
 
 # Expose port
 EXPOSE 3005

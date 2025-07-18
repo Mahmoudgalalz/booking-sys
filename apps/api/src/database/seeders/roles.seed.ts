@@ -20,12 +20,12 @@ export class RoleSeeder implements Seeder {
         description: 'User',
       },
     ];
-    for (const roleData of rolesData) {
-      await this.roleRepository.save({
-        name: roleData.name,
-        description: roleData.description,
-      });
-    }
+    await this.roleRepository.createQueryBuilder()
+      .insert()
+      .into(Role)
+      .values(rolesData)
+      .orIgnore() 
+      .execute();
     console.log('Role seeding completed!');
   }
 
