@@ -1,9 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { $fetchThrow } from './client';
 import { useUserStore } from '../store/userStore';
-import type { AuthResponse, LoginCredentials, RegisterData, ProviderData, User } from '../lib/utils/auth-service';
+import type { AuthResponse, LoginCredentials, RegisterData, ProviderData, User } from '../lib/types/auth';
 
-// Fetch user profile
 export const useUserProfile = () => {
   const userStore = useUserStore();
   
@@ -12,7 +11,6 @@ export const useUserProfile = () => {
     queryFn: async () => {
       try {
         const response = await $fetchThrow<AuthResponse>('/auth/profile');
-        // Update the store with the user data
         userStore.setUser(response.user);
         return response;
       } catch (error) {
@@ -27,7 +25,6 @@ export const useUserProfile = () => {
   });
 };
 
-// Login mutation
 export const useLogin = () => {
   const userStore = useUserStore();
   
@@ -51,7 +48,6 @@ export const useLogin = () => {
   });
 };
 
-// Register mutation
 export const useRegister = () => {
   const userStore = useUserStore();
   
@@ -75,7 +71,6 @@ export const useRegister = () => {
   });
 };
 
-// Complete provider profile mutation
 export const useCompleteProviderProfile = () => {
   const userStore = useUserStore();
   
@@ -98,12 +93,9 @@ export const useCompleteProviderProfile = () => {
   });
 };
 
-// Logout function
 export const logout = () => {
   useUserStore.getState().clearUser();
 };
-
-// Helper function to fetch user profile and update store
 export const fetchUserProfile = async (): Promise<User | null> => {
   try {
     const response = await $fetchThrow<AuthResponse>('/auth/profile');

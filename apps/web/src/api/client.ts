@@ -1,13 +1,11 @@
 import { createFetch } from '@better-fetch/fetch';
 import { useUserStore } from '../store/userStore';
 
-// Create a base fetch instance with common configurations
 export const $fetch = createFetch({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'http://localhost:3005',
   headers: {
     'Content-Type': 'application/json'
   },
-  // Add authorization header to each request
   onRequest: (request) => {
     const token = useUserStore.getState().token;
     if (token) {
@@ -23,18 +21,22 @@ export const $fetch = createFetch({
   },
 });
 
-// Create a version that throws errors for use with TanStack Query
 export const $fetchThrow = createFetch({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'http://localhost:3005',
   headers: {
     'Content-Type': 'application/json'
   },
-  // Add authorization header to each request
   onRequest: (request) => {
     const token = useUserStore.getState().token;
     if (token) {
       request.headers.set('Authorization', `Bearer ${token}`);
     }
+    
+    // Serialize body to JSON for POST, PUT, PATCH methods
+    if (request.method !== 'GET' && request.body && typeof request.body === 'object') {
+      request.body = JSON.stringify(request.body);
+    }
+    
     return request;
   },
   retry: {
@@ -43,5 +45,5 @@ export const $fetchThrow = createFetch({
     baseDelay: 1000,
     maxDelay: 5000
   },
-  throw: true, // This will throw errors instead of returning them
+  throw: true,
 });

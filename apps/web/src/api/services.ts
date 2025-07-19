@@ -29,7 +29,6 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// Fetch services with pagination and search
 export const useServices = (page: number = 1, search: string = '') => {
   return useQuery({
     queryKey: ['services', page, search],
@@ -44,12 +43,11 @@ export const useServices = (page: number = 1, search: string = '') => {
         throw error;
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 };
 
-// Fetch provider services
 export const useProviderServices = () => {
   return useQuery({
     queryKey: ['provider-services'],
@@ -62,12 +60,11 @@ export const useProviderServices = () => {
         throw error;
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 };
 
-// Fetch a single service by ID
 export const useService = (serviceId: number) => {
   return useQuery({
     queryKey: ['service', serviceId],
@@ -80,7 +77,7 @@ export const useService = (serviceId: number) => {
         throw error;
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 };

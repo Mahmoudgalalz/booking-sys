@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM node:22-slim AS base
 
 # Install pnpm
 RUN npm install -g pnpm@9.0.0

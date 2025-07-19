@@ -1,7 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { $fetchThrow } from './client';
 
-// Types for slots
 export interface Slot {
   id: number;
   providerId: number;
@@ -23,7 +22,6 @@ export interface CreateSlotData {
   endTime: string;
 }
 
-// Get all available slots
 export const useAvailableSlots = () => {
   return useQuery({
     queryKey: ['slots', 'available'],
@@ -34,7 +32,6 @@ export const useAvailableSlots = () => {
   });
 };
 
-// Get slots for a specific provider
 export const useProviderSlots = (providerId: number) => {
   return useQuery({
     queryKey: ['slots', 'provider', providerId],
@@ -46,7 +43,6 @@ export const useProviderSlots = (providerId: number) => {
   });
 };
 
-// Get slots for the current provider
 export const useCurrentProviderSlots = () => {
   return useQuery({
     queryKey: ['slots', 'current-provider'],
@@ -57,7 +53,6 @@ export const useCurrentProviderSlots = () => {
   });
 };
 
-// Create a new slot
 export const useCreateSlot = () => {
   return useMutation({
     mutationFn: async (data: CreateSlotData) => {
@@ -70,7 +65,6 @@ export const useCreateSlot = () => {
   });
 };
 
-// Delete a slot
 export const useDeleteSlot = () => {
   return useMutation({
     mutationFn: async (slotId: number) => {

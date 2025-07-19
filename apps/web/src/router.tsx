@@ -4,6 +4,7 @@ import RootLayout from './components/layout/RootLayout';
 import IndexRoute from './components/routes/IndexRoute';
 import HomeRoute from './components/routes/HomeRoute';
 import SignupRoute from './components/routes/SignupRoute';
+import LoginRoute from './components/routes/LoginRoute';
 import ProviderRoute from './components/routes/ProviderRoute';
 
 interface RouterContext {
@@ -31,6 +32,12 @@ const signupRoute = createRoute({
   component: SignupRoute
 });
 
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: LoginRoute
+});
+
 const providerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/provider',
@@ -41,6 +48,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   homeRoute,
   signupRoute,
+  loginRoute,
   providerRoute
 ]);
 

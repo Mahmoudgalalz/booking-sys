@@ -17,11 +17,11 @@ async function bootstrap() {
     ? process.env.ALLOWED_ORIGINS.replaceAll(' ', '').split(',')
     : [];
   app.enableCors({
-    origin: [process.env.FRONTEND_URL, ...allowedOrigins],
+    origin: '*', // on purpose for development
   });
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT || 3005);
 }
 
 bootstrap();

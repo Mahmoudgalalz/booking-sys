@@ -17,6 +17,7 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { SchedulingModule } from './modules/scheduling/scheduling.module';
 import { IsUniqueConstraint } from './modules/shared/decorators/validation/rules/unique.decorator';
 import { IsExistingConstraint } from './modules/shared/decorators/validation/rules/exists.decorator';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -38,13 +39,14 @@ import { IsExistingConstraint } from './modules/shared/decorators/validation/rul
         type: 'postgres',
         host: configService.get('database.host'),
         port: configService.get('database.port'),
-        username: configService.get('database.username'),
+        username: configService.get('database.user'),
         password: configService.get('database.password'),
-        database: configService.get('database.name'),
+        database: configService.get('database.database'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: configService.get('database.synchronize'),
       }),
     }),
+    ScheduleModule.forRoot(),
     SharedModule,
     AuthModule,
     UsersModule,

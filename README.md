@@ -60,10 +60,10 @@ docker-compose up -d
 This will start the following services:
 - PostgreSQL database (port 5432)
 - API backend (port 3005)
-- Web frontend (port 3000)
+- Web frontend (port 5173)
 
 3. Access the applications:
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:5173
    - API: http://localhost:3005
 
 ### Building Docker Images Manually

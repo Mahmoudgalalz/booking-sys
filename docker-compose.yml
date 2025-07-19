@@ -34,6 +34,8 @@ services:
       - DATABASE_NAME=booking_fincart
       - JWT_SECRET=a91d660b54414e59a91311310e94f91f568c172fdba72c3bbecba0f82c61f4b9
       - PORT=3005
+      - FRONTEND_URL=http://localhost:3000
+      - ALLOWED_ORIGINS=http://localhost:3000,http://web:80
     ports:
       - "3005:3005"
     depends_on:

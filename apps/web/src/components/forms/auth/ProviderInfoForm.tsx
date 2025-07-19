@@ -1,5 +1,6 @@
 import { useForm } from '@tanstack/react-form';
-import type { ProviderData } from '../../../lib/utils/auth-service';
+import type { ProviderData } from '../../../lib/types/auth';
+import { FileUpload } from '../../ui/FileUpload';
 
 interface ProviderInfoFormProps {
   onSubmit: (data: ProviderData) => void;
@@ -19,6 +20,7 @@ export function ProviderInfoForm({
       bio: '',
       specialization: '',
       experience: '',
+      profileImage: '',
     },
     onSubmit: async ({ value }) => {
       onSubmit(value);
@@ -27,7 +29,31 @@ export function ProviderInfoForm({
 
   return (
     <div className="w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6">Complete your provider profile</h2>
+      <h2 className="text-2xl font-bold mb-6 text-indigo-800">Complete your provider profile</h2>
+      
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-indigo-800 mb-2">
+          Profile Photo
+        </label>
+        <form.Field
+          name="profileImage"
+        >
+          {(field) => (
+            <>
+              <FileUpload
+                label="Upload Profile Photo"
+                onUploadSuccess={(url) => field.handleChange(url)}
+                className="w-full"
+              />
+              {field.state.value && (
+                <div className="mt-2 text-sm text-indigo-600">
+                  Profile photo uploaded successfully
+                </div>
+              )}
+            </>
+          )}
+        </form.Field>
+      </div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -37,7 +63,7 @@ export function ProviderInfoForm({
         className="space-y-4"
       >
         <div>
-          <label htmlFor="bio" className="block text-sm font-medium">
+          <label htmlFor="bio" className="block text-sm font-medium text-indigo-800">
             Bio
           </label>
           <form.Field 
@@ -58,7 +84,7 @@ export function ProviderInfoForm({
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
                   rows={4}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                   placeholder="Tell us about yourself..."
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
@@ -72,7 +98,7 @@ export function ProviderInfoForm({
         </div>
         
         <div>
-          <label htmlFor="specialization" className="block text-sm font-medium">
+          <label htmlFor="specialization" className="block text-sm font-medium text-indigo-800">
             Specialization
           </label>
           <form.Field 
@@ -93,7 +119,7 @@ export function ProviderInfoForm({
                   value={field.state.value || ''}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                   placeholder="Your area of expertise"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
@@ -107,7 +133,7 @@ export function ProviderInfoForm({
         </div>
         
         <div>
-          <label htmlFor="experience" className="block text-sm font-medium">
+          <label htmlFor="experience" className="block text-sm font-medium text-indigo-800">
             Experience
           </label>
           <form.Field 
@@ -128,7 +154,7 @@ export function ProviderInfoForm({
                   value={field.state.value || ''}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                   placeholder="Years of experience or relevant background"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
@@ -145,14 +171,14 @@ export function ProviderInfoForm({
           <button
             type="button"
             onClick={onSkip}
-            className="px-4 py-2 border rounded-md hover:bg-gray-100"
+            className="px-4 py-2 border border-indigo-300 rounded-md hover:bg-indigo-50 text-indigo-700 transition-colors"
           >
             Skip for now
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
           >
             {isLoading ? 'Saving...' : 'Complete Profile'}
           </button>

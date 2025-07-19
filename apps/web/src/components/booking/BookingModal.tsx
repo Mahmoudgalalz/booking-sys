@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiService } from '../../lib/utils/api-service';
-
-interface TimeSlot {
-  id: number;
-  startTime: string;
-  endTime: string;
-  isAvailable: boolean;
-}
+import { useQuery } from '@tanstack/react-query';
+import type { TimeSlot } from '../../lib/api/timeslots-api';
+import { timeSlotsApi } from '../../lib/api/timeslots-api';
+import { useBookingMutations } from '../../lib/hooks/useBookingMutations';
 
 interface Service {
   id: number;
@@ -35,7 +30,6 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
   );
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [bookingNotes, setBookingNotes] = useState('');
-  const queryClient = useQueryClient();
   
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -70,62 +64,27 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
     return dates;
   };
   
+  // Get the booking mutations hook
+  const { createBookingOptimistic } = useBookingMutations();
+  
   // Fetch available time slots for the selected date and service
   const timeSlotsQuery = useQuery({
     queryKey: ['timeSlots', service.id, selectedDate],
-    queryFn: () => apiService.get<TimeSlot[]>(
-      `/time-slots?serviceId=${service.id}&date=${selectedDate}`
-    ),
+    queryFn: () => timeSlotsApi.getTimeSlotsByService(service.id, selectedDate),
     staleTime: 10000, // Short stale time to ensure fresh data when booking
-  });
-  
-  // Create booking mutation with optimistic updates
-  const createBookingMutation = useMutation({
-    mutationFn: (timeSlotId: number) => 
-      apiService.post('/bookings', {
-        timeSlotId,
-        notes: bookingNotes,
-      }),
-    // Optimistic update to mark the time slot as unavailable
-    onMutate: async (timeSlotId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['timeSlots', service.id, selectedDate] });
-      
-      // Snapshot the previous value
-      const previousTimeSlots = queryClient.getQueryData(['timeSlots', service.id, selectedDate]);
-      
-      // Optimistically update to the new value
-      queryClient.setQueryData(['timeSlots', service.id, selectedDate], (old: TimeSlot[] | undefined) => {
-        if (!old) return [];
-        return old.map(slot => 
-          slot.id === timeSlotId ? { ...slot, isAvailable: false } : slot
-        );
-      });
-      
-      // Return a context object with the snapshotted value
-      return { previousTimeSlots };
-    },
-    // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (_err, _timeSlotId, context) => {
-      queryClient.setQueryData(
-        ['timeSlots', service.id, selectedDate],
-        context?.previousTimeSlots
-      );
-    },
-    // Always refetch after error or success
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['timeSlots', service.id, selectedDate] });
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
-    },
-    onSuccess: () => {
-      onSuccess();
-    },
   });
   
   // Handle booking confirmation
   const handleBooking = () => {
     if (selectedTimeSlot) {
-      createBookingMutation.mutate(selectedTimeSlot.id);
+      createBookingOptimistic.mutate({
+        timeSlotId: selectedTimeSlot.id,
+        notes: bookingNotes
+      }, {
+        onSuccess: () => {
+          onSuccess();
+        }
+      });
     }
   };
   
@@ -179,26 +138,26 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
             <div className="text-center py-4 text-red-500">
               Error loading time slots. Please try again.
             </div>
-          ) : timeSlotsQuery.data?.length === 0 ? (
+          ) : !timeSlotsQuery.data || timeSlotsQuery.data.length === 0 ? (
             <div className="text-center py-4 text-gray-500">
               No available time slots for this date. Please select another date.
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              {timeSlotsQuery.data?.map((slot) => (
+              {timeSlotsQuery.data.map((slot) => (
                 <button
                   key={slot.id}
                   onClick={() => setSelectedTimeSlot(slot)}
                   disabled={!slot.isAvailable}
-                  className={`px-3 py-2 rounded-md ${
-                    selectedTimeSlot?.id === slot.id
-                      ? 'bg-blue-600 text-white'
-                      : slot.isAvailable
-                      ? 'border hover:bg-gray-100'
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  className={`p-2 rounded-md ${selectedTimeSlot?.id === slot.id
+                    ? 'bg-blue-600 text-white'
+                    : slot.isAvailable
+                    ? 'border hover:bg-gray-100'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  {formatTime(slot.startTime)}
+                  {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                  {!slot.isAvailable && ' (Booked)'}
                 </button>
               ))}
             </div>
@@ -253,20 +212,20 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
           </button>
           <button
             onClick={handleBooking}
-            disabled={!selectedTimeSlot || createBookingMutation.isPending}
+            disabled={!selectedTimeSlot || createBookingOptimistic.isPending}
             className={`px-4 py-2 rounded-md ${
-              !selectedTimeSlot || createBookingMutation.isPending
+              !selectedTimeSlot || createBookingOptimistic.isPending
                 ? 'bg-gray-300 cursor-not-allowed'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
-            {createBookingMutation.isPending ? 'Booking...' : 'Confirm Booking'}
+            {createBookingOptimistic.isPending ? 'Booking...' : 'Confirm Booking'}
           </button>
         </div>
         
-        {createBookingMutation.isError && (
+        {createBookingOptimistic.isError && (
           <div className="mt-3 text-red-500 text-sm">
-            {(createBookingMutation.error as Error).message || 'An error occurred during booking'}
+            {(createBookingOptimistic.error as Error)?.message || 'An error occurred during booking'}
           </div>
         )}
       </div>

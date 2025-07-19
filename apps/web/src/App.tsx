@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
+import { ToastProvider } from './components/ui/ToastProvider';
 import './global.css';
 
 // Import router from our router file
@@ -17,6 +18,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <ToastProvider />
       <RouterProvider router={router} />
     </QueryClientProvider>
   );

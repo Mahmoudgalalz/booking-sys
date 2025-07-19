@@ -1,18 +1,17 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
-import { Service } from './entities/service.entity';
-import { CreateServiceDto } from './dto/create-service.dto';
-import { UpdateServiceDto } from './dto/update-service.dto';
+import { Like } from 'typeorm';
+import { ServiceRepository } from '../shared/repositories/service.repository';
+import { CreateServiceValidation } from './validation/create-service.validation';
+import { UpdateServiceValidation } from './validation/update-service.validation';
+import { Service } from '../shared/entities/services.entity';
 
 @Injectable()
 export class ServicesService {
   constructor(
-    @InjectRepository(Service)
-    private readonly serviceRepository: Repository<Service>,
+    private readonly serviceRepository: ServiceRepository,
   ) {}
 
-  async create(createServiceDto: CreateServiceDto, providerId: number): Promise<Service> {
+  async create(createServiceDto: CreateServiceValidation, providerId: number): Promise<Service> {
     const service = this.serviceRepository.create({
       ...createServiceDto,
       providerId,
@@ -50,7 +49,7 @@ export class ServicesService {
     return service;
   }
 
-  async update(id: number, updateServiceDto: UpdateServiceDto, providerId: number): Promise<Service> {
+  async update(id: number, updateServiceDto: UpdateServiceValidation, providerId: number): Promise<Service> {
     const service = await this.findOne(id);
     
     if (service.providerId !== providerId) {

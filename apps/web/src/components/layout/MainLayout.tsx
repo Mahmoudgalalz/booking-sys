@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { authService } from '../../lib/utils/auth-service';
+import { useUserStore } from '../../store/userStore';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -12,8 +12,8 @@ export default function MainLayout({
   showHeader = true, 
   showFooter = true 
 }: MainLayoutProps) {
-  const user = authService.getCurrentUser();
-  const isAuthenticated = authService.isAuthenticated();
+  const user = useUserStore.getState().user;
+  const isAuthenticated = user !== null;
   const isProvider = user?.role?.name === 'provider';
 
   return (
@@ -23,13 +23,13 @@ export default function MainLayout({
         <header className="bg-white shadow-sm">
           <div className="container mx-auto px-4 py-4 flex justify-between items-center">
             <div className="flex items-center space-x-8">
-              <a href="/" className="text-xl font-bold text-blue-600">BookingApp</a>
+              <a href="/" className="text-xl font-bold text-indigo-600">BookingApp</a>
               
               {isAuthenticated && (
                 <nav className="hidden md:flex space-x-6">
                   <a 
                     href="/" 
-                    className="text-gray-600 hover:text-blue-600 transition-colors"
+                    className="text-gray-600 hover:text-indigo-600 transition-colors"
                   >
                     Home
                   </a>
@@ -37,13 +37,13 @@ export default function MainLayout({
                     <>
                       <a 
                         href="/provider" 
-                        className="text-gray-600 hover:text-blue-600 transition-colors"
+                        className="text-gray-600 hover:text-indigo-600 transition-colors"
                       >
                         Dashboard
                       </a>
                       <a 
                         href="/provider/services" 
-                        className="text-gray-600 hover:text-blue-600 transition-colors"
+                        className="text-gray-600 hover:text-indigo-600 transition-colors"
                       >
                         My Services
                       </a>
@@ -51,7 +51,7 @@ export default function MainLayout({
                   ) : (
                     <a 
                       href="/bookings" 
-                      className="text-gray-600 hover:text-blue-600 transition-colors"
+                      className="text-gray-600 hover:text-indigo-600 transition-colors"
                     >
                       My Bookings
                     </a>
@@ -67,25 +67,25 @@ export default function MainLayout({
                     {user?.firstName} {user?.lastName}
                   </span>
                   <button
-                    onClick={() => authService.logout()}
-                    className="px-3 py-1.5 text-sm border rounded-md hover:bg-gray-100 transition-colors"
+                    onClick={() => useUserStore.getState().clearUser()}
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
                     Logout
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center space-x-2">
-                  <a
-                    href="/login"
-                    className="px-3 py-1.5 text-sm border rounded-md hover:bg-gray-100 transition-colors"
+                <div className="flex items-center space-x-4">
+                  <a 
+                    href="/login" 
+                    className="px-4 py-2 text-sm font-medium text-indigo-600 bg-white border border-indigo-600 rounded-md hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    Log in
+                    Login
                   </a>
-                  <a
-                    href="/signup"
-                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  <a 
+                    href="/signup" 
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    Sign up
+                    Sign Up
                   </a>
                 </div>
               )}
@@ -101,25 +101,16 @@ export default function MainLayout({
       
       {/* Footer */}
       {showFooter && (
-        <footer className="bg-white border-t mt-auto">
+        <footer className="mt-auto bg-white border-t border-gray-200">
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-4 md:mb-0">
-                <p className="text-sm text-gray-600">
-                  © {new Date().getFullYear()} BookingApp. All rights reserved.
-                </p>
+                <p className="text-sm text-gray-600">&copy; {new Date().getFullYear()} BookingApp. All rights reserved.</p>
               </div>
-              
               <div className="flex space-x-6">
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
-                  Terms
-                </a>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
-                  Privacy
-                </a>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">
-                  Contact
-                </a>
+                <a href="#" className="text-sm text-gray-600 hover:text-indigo-600">Terms</a>
+                <a href="#" className="text-sm text-gray-600 hover:text-indigo-600">Privacy</a>
+                <a href="#" className="text-sm text-gray-600 hover:text-indigo-600">Contact</a>
               </div>
             </div>
           </div>

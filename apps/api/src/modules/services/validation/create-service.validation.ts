@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
 
-export class CreateServiceDto {
+export class CreateServiceValidation {
   @IsNotEmpty()
   @IsString()
   title: string;

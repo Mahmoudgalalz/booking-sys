@@ -13,6 +13,8 @@ import { ServiceRepository } from './repositories/service.repository';
 import { TimeSlotRepository } from './repositories/time-slot.repository';
 import { BookingRepository } from './repositories/booking.repository';
 import { ProviderRepository } from './repositories/provider.repository';
+import { UploadController } from './upload/upload.controller';
+import { FileUploadService } from './upload/upload.service';
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { ProviderRepository } from './repositories/provider.repository';
     TimeSlotRepository,
     BookingRepository,
     ProviderRepository,
+    FileUploadService,
   ],
   exports: [
     TypeOrmModule,
@@ -43,5 +46,6 @@ import { ProviderRepository } from './repositories/provider.repository';
     BookingRepository,
     ProviderRepository,
   ],
+  controllers: [UploadController]
 })
 export class SharedModule {}

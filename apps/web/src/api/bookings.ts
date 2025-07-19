@@ -24,7 +24,6 @@ export interface Booking {
   };
 }
 
-// Get all bookings for the current user
 export const useUserBookings = () => {
   return useQuery({
     queryKey: ['bookings', 'user'],
@@ -35,7 +34,6 @@ export const useUserBookings = () => {
   });
 };
 
-// Get all bookings for a provider
 export const useProviderBookings = () => {
   return useQuery({
     queryKey: ['bookings', 'provider'],
@@ -46,7 +44,6 @@ export const useProviderBookings = () => {
   });
 };
 
-// Create a new booking
 export const useCreateBooking = () => {
   return useMutation({
     mutationFn: async (data: { slotId: number }) => {
@@ -59,7 +56,6 @@ export const useCreateBooking = () => {
   });
 };
 
-// Cancel a booking
 export const useCancelBooking = () => {
   return useMutation({
     mutationFn: async (bookingId: number) => {

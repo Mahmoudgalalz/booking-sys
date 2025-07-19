@@ -1,5 +1,5 @@
 import { useForm } from '@tanstack/react-form';
-import type { RegisterData } from '../../../lib/utils/auth-service';
+import type { RegisterData } from '../../../lib/types/auth';
 
 interface BasicInfoFormProps {
   onSubmit: (data: RegisterData) => void;
@@ -31,7 +31,7 @@ export function BasicInfoForm({
 
   return (
     <div className="w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6">Create your account</h2>
+      <h2 className="text-2xl font-bold mb-6 text-indigo-800">Create your account</h2>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -41,7 +41,7 @@ export function BasicInfoForm({
         className="space-y-4"
       >
         <div>
-          <label htmlFor="firstName" className="block text-sm font-medium">
+          <label htmlFor="firstName" className="block text-sm font-medium text-indigo-800">
             First Name
           </label>
           <form.Field
@@ -62,7 +62,7 @@ export function BasicInfoForm({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                   <div className="text-red-500 text-sm mt-1">
@@ -75,7 +75,7 @@ export function BasicInfoForm({
         </div>
         
         <div>
-          <label htmlFor="lastName" className="block text-sm font-medium">
+          <label htmlFor="lastName" className="block text-sm font-medium text-indigo-800">
             Last Name
           </label>
           <form.Field
@@ -96,7 +96,7 @@ export function BasicInfoForm({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                   <div className="text-red-500 text-sm mt-1">
@@ -109,7 +109,7 @@ export function BasicInfoForm({
         </div>
         
         <div>
-          <label htmlFor="email" className="block text-sm font-medium">
+          <label htmlFor="email" className="block text-sm font-medium text-indigo-800">
             Email
           </label>
           <form.Field
@@ -132,7 +132,7 @@ export function BasicInfoForm({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                   <div className="text-red-500 text-sm mt-1">
@@ -145,7 +145,7 @@ export function BasicInfoForm({
         </div>
         
         <div>
-          <label htmlFor="password" className="block text-sm font-medium">
+          <label htmlFor="password" className="block text-sm font-medium text-indigo-800">
             Password
           </label>
           <form.Field
@@ -167,7 +167,7 @@ export function BasicInfoForm({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                   <div className="text-red-500 text-sm mt-1">
@@ -194,14 +194,14 @@ export function BasicInfoForm({
           <button
             type="button"
             onClick={onBack}
-            className="px-4 py-2 border rounded-md hover:bg-gray-100"
+            className="px-4 py-2 border border-indigo-300 rounded-md hover:bg-indigo-50 text-indigo-700 transition-colors"
           >
             Back
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
           >
             {isLoading ? 'Signing up...' : 'Continue'}
           </button>

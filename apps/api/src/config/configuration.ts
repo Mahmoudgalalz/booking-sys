@@ -1,7 +1,7 @@
 import * as process from 'process';
 
 export default () => ({
-  port: parseInt(process.env.PORT ?? '3000', 10),
+  port: parseInt(process.env.PORT ?? '3005', 10),
   database: {
     type: 'postgres',
     host: process.env.DATABASE_HOST ?? 'localhost',
@@ -11,7 +11,7 @@ export default () => ({
     database: process.env.DATABASE_NAME,
   },
   cors: {
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     credentials: process.env.CORS_CREDENTIALS ?? true,
   },
   jwt: {
