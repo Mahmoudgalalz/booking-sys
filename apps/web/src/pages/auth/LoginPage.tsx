@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLogin } from '../../api/auth';
 import { useNavigate } from '@tanstack/react-router';
 import type { LoginCredentials } from '../../lib/types/auth';
+import { useUserStore } from '../../store/userStore';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -25,8 +26,19 @@ export function LoginPage() {
     setError(null);
     
     try {
-      await loginMutation.mutateAsync(formData);
-      navigate({ to: '/home' });
+      const response = await loginMutation.mutateAsync(formData);
+      console.log('Login response:', response);
+      
+      // Ensure token is stored in localStorage directly as well
+      if (response && response.success && response.data && response.data.accessToken) {
+        useUserStore.setState({ token: response.data.accessToken });
+        console.log('Login successful, token stored:', response.data.accessToken);
+      }
+      
+      // Small delay to ensure state updates before navigation
+      setTimeout(() => {
+        navigate({ to: '/home' });
+      }, 100);
     } catch (err) {
       console.error('Login error:', err);
       setError('Invalid email or password. Please try again.');

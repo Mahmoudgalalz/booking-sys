@@ -10,6 +10,7 @@ import { cn } from '../../lib/utils/cn';
 
 export function TimeSlotsTab() {
   const [isAddTimeSlotModalOpen, setIsAddTimeSlotModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [newTimeSlot, setNewTimeSlot] = useState<{
     serviceId: number;
     date: string;
@@ -24,16 +25,16 @@ export function TimeSlotsTab() {
     interval: 60,
   });
 
-  // Fetch provider time slots
+  // Fetch provider time slots with pagination
   const timeSlotsQuery = useQuery({
-    queryKey: ['provider-timeslots'],
-    queryFn: () => timeSlotsApi.getProviderTimeSlots(),
+    queryKey: ['provider-timeslots', currentPage],
+    queryFn: () => timeSlotsApi.getProviderTimeSlots(currentPage, 10),
   });
 
-  // Fetch provider services for the dropdown
+  // Fetch provider services for the dropdown with pagination
   const servicesQuery = useQuery({
     queryKey: ['provider-services'],
-    queryFn: () => servicesApi.getProviderServices(),
+    queryFn: () => servicesApi.getProviderServices(1, 100), // Load more services for dropdown
   });
 
   // Format date for display
@@ -118,7 +119,7 @@ export function TimeSlotsTab() {
         <div className="text-center py-8 text-red-500">
           Error loading time slots. Please try again.
         </div>
-      ) : timeSlotsQuery.data?.length === 0 ? (
+      ) : timeSlotsQuery.data?.items.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-gray-500">You haven't added any time slots yet.</p>
@@ -142,7 +143,7 @@ export function TimeSlotsTab() {
               </tr>
             </thead>
             <tbody>
-              {timeSlotsQuery.data?.map((slot) => (
+              {timeSlotsQuery.data?.items.map((slot) => (
                 <tr key={slot.id} className="border-b">
                   <td className="py-4">
                     {formatDate(slot.startTime)}
@@ -178,6 +179,29 @@ export function TimeSlotsTab() {
               ))}
             </tbody>
           </table>
+          
+          {/* Pagination Controls */}
+          {timeSlotsQuery.data && timeSlotsQuery.data.meta.totalPages > 1 && (
+            <div className="flex justify-center mt-6 space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span className="py-2 px-4 border rounded">
+                Page {currentPage} of {timeSlotsQuery.data.meta.totalPages}
+              </span>
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, timeSlotsQuery.data.meta.totalPages))}
+                disabled={currentPage === timeSlotsQuery.data.meta.totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -203,7 +227,7 @@ export function TimeSlotsTab() {
                   required
                 >
                   <option value={0}>Select a service</option>
-                  {servicesQuery.data?.map((service: Service) => (
+                  {servicesQuery.data?.items.map((service: Service) => (
                     <option key={service.id} value={service.id}>
                       {service.title}
                     </option>
@@ -221,7 +245,7 @@ export function TimeSlotsTab() {
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="startTime" className="text-sm font-medium text-indigo-800">Start Time</label>
                   <Input

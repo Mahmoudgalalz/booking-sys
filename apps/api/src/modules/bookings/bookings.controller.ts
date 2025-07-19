@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   UseGuards,
+  HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { CreateBookingValidation } from './validation/create-booking.validation';
 import { JwtAuthGuard } from '../shared/auth/guards/jwt-auth.guard';
@@ -15,6 +17,8 @@ import { RolesEnum } from '../shared/enums/roles.enum';
 import { User } from '../shared/decorators/user.decorator';
 import { BookingsService } from './bookings.service';
 import { AuthUser } from '../shared/types/auth-user.type';
+import { ResponseUtil } from '../shared/utils/response-util';
+import { IPaginationOptions } from 'nestjs-typeorm-paginate';
 
 @Controller('bookings')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -24,26 +28,46 @@ export class BookingsController {
   @Post()
   @Roles(RolesEnum.USER)
   @UseGuards(RolesGuard)
-  create(@Body() createBookingDto: CreateBookingValidation, @User() user: AuthUser) {
-    return this.bookingsService.create(createBookingDto, user.sub);
+  async create(@Body() createBookingDto: CreateBookingValidation, @User() user: AuthUser) {
+    try {
+      const booking = await this.bookingsService.create(createBookingDto, user.sub);
+      return ResponseUtil.success(booking, 'Booking created successfully', HttpStatus.CREATED);
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Get('me')
   @Roles(RolesEnum.USER, RolesEnum.PROVIDER)
-  findMyBookings(@User() user: AuthUser) {
-    return this.bookingsService.findByUserId(user.sub);
+  async findMyBookings(@User() user: AuthUser, @Query() pagination: IPaginationOptions) {
+    try {
+      const bookings = await this.bookingsService.findByUserId(user.sub, pagination);
+      return ResponseUtil.success(bookings, 'User bookings retrieved successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Get('provider')
   @Roles(RolesEnum.PROVIDER)
   @UseGuards(RolesGuard)
-  findProviderBookings(@User() user: AuthUser) {
-    return this.bookingsService.findByProviderId(user.sub);
+  async findProviderBookings(@User() user: AuthUser, @Query() pagination: IPaginationOptions) {
+    try {
+      const bookings = await this.bookingsService.findByProviderId(user.sub, pagination);
+      return ResponseUtil.success(bookings, 'Provider bookings retrieved successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Patch(':id/cancel')
   @Roles(RolesEnum.USER)
-  cancelBooking(@Param('id') id: string, @User() user: AuthUser) {
-    return this.bookingsService.cancel(+id, user.sub, user.role);
+  async cancelBooking(@Param('id') id: string, @User() user: AuthUser) {
+    try {
+      const booking = await this.bookingsService.cancel(+id, user.sub, user.role);
+      return ResponseUtil.success(booking, 'Booking cancelled successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

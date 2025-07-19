@@ -11,7 +11,17 @@ export const useUserProfile = () => {
     queryFn: async () => {
       try {
         const response = await $fetchThrow<AuthResponse>('/auth/profile');
-        userStore.setUser(response.user);
+        if (response.success && response.data) {
+          // Extract user info from response data
+          const userData = {
+            id: response.data.roleId, // Using roleId as user id for now
+            email: '', // This might need to be updated based on actual response
+            firstName: '',
+            lastName: '',
+            role: response.data.role
+          };
+          userStore.setUser(userData);
+        }
         return response;
       } catch (error) {
         console.error('Failed to fetch user profile:', error);
@@ -42,8 +52,22 @@ export const useLogin = () => {
       }
     },
     onSuccess: (data: AuthResponse) => {
-      userStore.setUser(data.user);
-      userStore.setToken(data.token);
+      if (data.success && data.data) {
+        // Extract user info from response data
+        const userData = {
+          id: data.data.roleId, // Using roleId as user id for now
+          email: '', // This might need to be updated based on actual response
+          firstName: '',
+          lastName: '',
+          role: data.data.role
+        };
+        userStore.setUser(userData);
+        userStore.setToken(data.data.accessToken);
+        
+        // Also store token in localStorage for backward compatibility
+        localStorage.setItem('auth_token', data.data.accessToken);
+        console.log('Login successful, token stored:', data.data.accessToken);
+      }
     },
   });
 };
@@ -65,8 +89,21 @@ export const useRegister = () => {
       }
     },
     onSuccess: (data: AuthResponse) => {
-      userStore.setUser(data.user);
-      userStore.setToken(data.token);
+      if (data.success && data.data) {
+        // Extract user info from response data
+        const userData = {
+          id: data.data.roleId, // Using roleId as user id for now
+          email: '', // This might need to be updated based on actual response
+          firstName: '',
+          lastName: '',
+          role: data.data.role
+        };
+        userStore.setUser(userData);
+        userStore.setToken(data.data.accessToken);
+        
+        // Also store token in localStorage for backward compatibility
+        localStorage.setItem('auth_token', data.data.accessToken);
+      }
     },
   });
 };
@@ -88,7 +125,17 @@ export const useCompleteProviderProfile = () => {
       }
     },
     onSuccess: (data: AuthResponse) => {
-      userStore.setUser(data.user);
+      if (data.success && data.data) {
+        // Extract user info from response data
+        const userData = {
+          id: data.data.roleId, // Using roleId as user id for now
+          email: '', // This might need to be updated based on actual response
+          firstName: '',
+          lastName: '',
+          role: data.data.role
+        };
+        userStore.setUser(userData);
+      }
     },
   });
 };

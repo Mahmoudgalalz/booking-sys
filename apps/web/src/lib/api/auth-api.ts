@@ -1,18 +1,20 @@
 import { api } from './client';
-import type { ApiResponse } from './client';
 import type { LoginCredentials, RegisterData, ProviderData, AuthResponse } from '../types/auth';
 
 export const authApi = {
-  login: (credentials: LoginCredentials): ApiResponse<AuthResponse> => {
-    return api.post('/auth/login', credentials, true);
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/login', credentials, true);
+    return response.data;
   },
 
-  register: (data: RegisterData): ApiResponse<AuthResponse> => {
-    return api.post('/auth/register', data, true);
+  register: async (data: RegisterData): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/register', data, true);
+    return response.data;
   },
 
-  completeProviderProfile: (data: ProviderData): ApiResponse<AuthResponse> => {
-    return api.post('/providers/profile', data);
+  completeProviderProfile: async (data: ProviderData): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/providers/profile', data);
+    return response.data;
   },
 
   getCurrentUser: () => {

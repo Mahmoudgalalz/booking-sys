@@ -4,6 +4,7 @@ import { ServiceRepository } from '../shared/repositories/service.repository';
 import { CreateServiceValidation } from './validation/create-service.validation';
 import { UpdateServiceValidation } from './validation/update-service.validation';
 import { Service } from '../shared/entities/services.entity';
+import { IPaginationOptions, Pagination, paginate } from 'nestjs-typeorm-paginate';
 
 @Injectable()
 export class ServicesService {
@@ -19,7 +20,7 @@ export class ServicesService {
     return this.serviceRepository.save(service);
   }
 
-  async findAll(category?: string, search?: string): Promise<Service[]> {
+  async findAll(pagination: IPaginationOptions, category?: string, search?: string): Promise<Pagination<Service>> {
     const whereCondition: any = {};
     
     if (category) {
@@ -30,10 +31,11 @@ export class ServicesService {
       whereCondition.title = Like(`%${search}%`);
     }
     
-    return this.serviceRepository.find({
-      where: whereCondition,
-      relations: ['provider'],
-    });
+    const services = this.serviceRepository.createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .where(whereCondition)
+
+    return paginate(services, pagination);
   }
 
   async findOne(id: number): Promise<Service> {

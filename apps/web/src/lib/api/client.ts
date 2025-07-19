@@ -1,5 +1,7 @@
 import { betterFetch } from '@better-fetch/fetch';
 import { showResponseToast } from '../utils/toast-utils';
+import { useUserStore } from '../../store/userStore';
+import type { ApiResponse } from '../types/auth';
 
 const BASE_URL = 'http://localhost:3005';
 const getAuthHeaders = (): HeadersInit => {
@@ -7,18 +9,22 @@ const getAuthHeaders = (): HeadersInit => {
     'Content-Type': 'application/json',
   };
 
-  const token = localStorage.getItem('auth_token');
+  // Get token from userStore instead of directly from localStorage
+  const token = useUserStore.getState().token;
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    
+    // Also ensure token is in localStorage for backward compatibility
+    localStorage.setItem('auth_token', token);
   }
 
   return headers;
 };
 
 export const api = {
-  get: async <T>(endpoint: string, skipAuth = false): Promise<T> => {
+  get: async <T>(endpoint: string, skipAuth = false): Promise<ApiResponse<T>> => {
     const headers = skipAuth ? { 'Content-Type': 'application/json' } : getAuthHeaders();
-    const { data, error } = await betterFetch<T>(`${BASE_URL}${endpoint}`, {
+    const { data, error } = await betterFetch<ApiResponse<T>>(`${BASE_URL}${endpoint}`, {
       method: 'GET',
       headers,
     });
@@ -28,13 +34,16 @@ export const api = {
       throw error;
     }
     
-    showResponseToast(data);
+    if (data && data.message) {
+      showResponseToast({ message: data.message }, !data.success);
+    }
+    
     return data;
   },
 
-  post: async <T>(endpoint: string, body: unknown, skipAuth = false): Promise<T> => {
+  post: async <T>(endpoint: string, body: unknown, skipAuth = false): Promise<ApiResponse<T>> => {
     const headers = skipAuth ? { 'Content-Type': 'application/json' } : getAuthHeaders();
-    const { data, error } = await betterFetch<T>(`${BASE_URL}${endpoint}`, {
+    const { data, error } = await betterFetch<ApiResponse<T>>(`${BASE_URL}${endpoint}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -45,13 +54,16 @@ export const api = {
       throw error;
     }
     
-    showResponseToast(data);
+    if (data && data.message) {
+      showResponseToast({ message: data.message }, !data.success);
+    }
+    
     return data;
   },
 
-  put: async <T>(endpoint: string, body: unknown, skipAuth = false): Promise<T> => {
+  put: async <T>(endpoint: string, body: unknown, skipAuth = false): Promise<ApiResponse<T>> => {
     const headers = skipAuth ? { 'Content-Type': 'application/json' } : getAuthHeaders();
-    const { data, error } = await betterFetch<T>(`${BASE_URL}${endpoint}`, {
+    const { data, error } = await betterFetch<ApiResponse<T>>(`${BASE_URL}${endpoint}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
@@ -62,13 +74,16 @@ export const api = {
       throw error;
     }
     
-    showResponseToast(data);
+    if (data && data.message) {
+      showResponseToast({ message: data.message }, !data.success);
+    }
+    
     return data;
   },
 
-  delete: async <T>(endpoint: string, skipAuth = false): Promise<T> => {
+  delete: async <T>(endpoint: string, skipAuth = false): Promise<ApiResponse<T>> => {
     const headers = skipAuth ? { 'Content-Type': 'application/json' } : getAuthHeaders();
-    const { data, error } = await betterFetch<T>(`${BASE_URL}${endpoint}`, {
+    const { data, error } = await betterFetch<ApiResponse<T>>(`${BASE_URL}${endpoint}`, {
       method: 'DELETE',
       headers,
     });
@@ -78,9 +93,12 @@ export const api = {
       throw error;
     }
     
-    showResponseToast(data);
+    if (data && data.message) {
+      showResponseToast({ message: data.message }, !data.success);
+    }
+    
     return data;
   },
 };
 
-export type ApiResponse<T> = Promise<T>;
+// ApiResponse type is now imported from '../types/auth'

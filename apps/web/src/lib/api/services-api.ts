@@ -1,6 +1,17 @@
 import { api } from './client';
-import type { ApiResponse } from './client';
+import type { ApiResponse } from '../types/auth';
   
+export interface PaginatedResponse<T> {
+  items: T[];
+  meta: {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  };
+}
+
 export interface Service {
   id: number;
   title: string;
@@ -28,31 +39,41 @@ export interface ServiceCreateData {
 }
 
 export const servicesApi = {
-  getAllServices: (): ApiResponse<Service[]> => {
-    return api.get('/services');
+  getAllServices: async (page = 1, limit = 10, category?: string, search?: string): Promise<PaginatedResponse<Service>> => {
+    let url = `/services?page=${page}&limit=${limit}`;
+    if (category) url += `&category=${category}`;
+    if (search) url += `&search=${search}`;
+    
+    const response = await api.get<ApiResponse<PaginatedResponse<Service>>>(url);
+    return response.data.data;
   },
 
-  getServicesByProvider: (providerId: number): ApiResponse<Service[]> => {
-    return api.get(`/services?providerId=${providerId}`);
+  getServicesByProvider: async (providerId: number, page = 1, limit = 10): Promise<PaginatedResponse<Service>> => {
+    const response = await api.get<ApiResponse<PaginatedResponse<Service>>>(`/services?providerId=${providerId}&page=${page}&limit=${limit}`);
+    return response.data.data;
   },
 
-  getProviderServices: (): ApiResponse<Service[]> => {
-    return api.get('/providers/services');
+  getProviderServices: async (page = 1, limit = 10): Promise<PaginatedResponse<Service>> => {
+    const response = await api.get<ApiResponse<PaginatedResponse<Service>>>(`/providers/services?page=${page}&limit=${limit}`);
+    return response.data.data;
   },
 
-  getServiceById: (serviceId: number): ApiResponse<Service> => {
-    return api.get(`/services/${serviceId}`);
+  getServiceById: async (serviceId: number): Promise<Service> => {
+    const response = await api.get<ApiResponse<Service>>(`/services/${serviceId}`);
+    return response.data.data;
   },
 
-  createService: (data: ServiceCreateData): ApiResponse<Service> => {
-    return api.post('/services', data);
+  createService: async (data: ServiceCreateData): Promise<Service> => {
+    const response = await api.post<Service>('/services', data);
+    return response.data;
   },
 
-  updateService: (serviceId: number, data: Partial<ServiceCreateData>): ApiResponse<Service> => {
-    return api.put(`/services/${serviceId}`, data);
+  updateService: async (serviceId: number, data: Partial<ServiceCreateData>): Promise<Service> => {
+    const response = await api.put<Service>(`/services/${serviceId}`, data);
+    return response.data;
   },
 
-  deleteService: (serviceId: number): ApiResponse<void> => {
-    return api.delete(`/services/${serviceId}`);
+  deleteService: async (serviceId: number): Promise<void> => {
+    await api.delete<void>(`/services/${serviceId}`);
   },
 };

@@ -15,6 +15,7 @@ interface ServicesTabProps {
 
 export function ServicesTab({ onEditService }: ServicesTabProps) {
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [newService, setNewService] = useState({
     title: '',
     description: '',
@@ -27,10 +28,10 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
   // Get service mutations
   const { createService, deleteService } = useServiceMutations();
 
-  // Fetch provider services
+  // Fetch provider services with pagination
   const servicesQuery = useQuery({
-    queryKey: ['provider-services'],
-    queryFn: () => servicesApi.getProviderServices(),
+    queryKey: ['provider-services', currentPage],
+    queryFn: () => servicesApi.getProviderServices(currentPage, 10),
   });
 
   // Handle service deletion
@@ -101,7 +102,7 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
         <div className="text-center py-8 text-red-500">
           Error loading services. Please try again.
         </div>
-      ) : servicesQuery.data?.length === 0 ? (
+      ) : servicesQuery.data?.items.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-gray-500">You haven't added any services yet.</p>
@@ -114,8 +115,9 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {servicesQuery.data?.map((service) => (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {servicesQuery.data?.items.map((service: Service) => (
             <Card key={service.id}>
               <CardHeader>
                 <CardTitle>{service.title}</CardTitle>
@@ -143,8 +145,32 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
                 </Button>
               </CardFooter>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+          
+          {/* Pagination Controls */}
+          {servicesQuery.data && servicesQuery.data.meta.totalPages > 1 && (
+            <div className="flex justify-center mt-6 space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span className="py-2 px-4 border rounded">
+                Page {currentPage} of {servicesQuery.data.meta.totalPages}
+              </span>
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, servicesQuery.data.meta.totalPages))}
+                disabled={currentPage === servicesQuery.data.meta.totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add Service Modal */}

@@ -4,4 +4,7 @@ export interface AuthUser {
     name: string;
     role: string;
     roleId: number;
+    type?: {
+        name: string;
+    };
 }

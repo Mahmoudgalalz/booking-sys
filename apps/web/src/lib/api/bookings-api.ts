@@ -1,5 +1,4 @@
 import { api } from './client';
-import type { ApiResponse } from './client';
 
 export interface Booking {
   id: number;
@@ -30,19 +29,23 @@ export interface BookingCreateData {
 
 
 export const bookingsApi = {
-  getUserBookings: (): ApiResponse<Booking[]> => {
-    return api.get('/bookings/user');
+  getUserBookings: async (): Promise<Booking[]> => {
+    const response = await api.get<Booking[]>('/bookings/user');
+    return response.data;
   },
 
-  getProviderBookings: (): ApiResponse<Booking[]> => {
-    return api.get('/bookings/provider');
+  getProviderBookings: async (): Promise<Booking[]> => {
+    const response = await api.get<Booking[]>('/bookings/provider');
+    return response.data;
   },
 
-  createBooking: (data: BookingCreateData): ApiResponse<Booking> => {
-    return api.post('/bookings', data);
+  createBooking: async (data: BookingCreateData): Promise<Booking> => {
+    const response = await api.post<Booking>('/bookings', data);
+    return response.data;
   },
 
-  updateBookingStatus: (bookingId: number, status: string): ApiResponse<Booking> => {
-    return api.put(`/bookings/${bookingId}/status`, { status });
+  updateBookingStatus: async (bookingId: number, status: string): Promise<Booking> => {
+    const response = await api.put<Booking>(`/bookings/${bookingId}/status`, { status });
+    return response.data;
   },
 };

@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   UseGuards,
+  HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../shared/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../shared/auth/guards/roles.guard';
@@ -16,6 +17,7 @@ import { ProvidersService } from './providers.service';
 import { CreateProviderProfileDto } from './validation/create-provider-profile.validation';
 import { UpdateProviderProfileDto } from './validation/update-provider-profile.validation';
 import { AuthUser } from '../shared/types/auth-user.type';
+import { ResponseUtil } from '../shared/utils/response-util';
 
 @Controller('providers')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -24,29 +26,54 @@ export class ProvidersController {
 
   @Post('profile')
   @Roles(RolesEnum.PROVIDER)
-  createProfile(@Body() createProfileDto: CreateProviderProfileDto, @User() user: AuthUser) {
-    return this.providersService.createProfile(createProfileDto, user.sub);
+  async createProfile(@Body() createProfileDto: CreateProviderProfileDto, @User() user: AuthUser) {
+    try {
+      const profile = await this.providersService.createProfile(createProfileDto, user.sub);
+      return ResponseUtil.success(profile, 'Provider profile created successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Patch('profile')
   @Roles(RolesEnum.PROVIDER)
-  updateProfile(@Body() updateProfileDto: UpdateProviderProfileDto, @User() user: AuthUser) {
-    return this.providersService.updateProfile(updateProfileDto, user.sub);
+  async updateProfile(@Body() updateProfileDto: UpdateProviderProfileDto, @User() user: AuthUser) {
+    try {
+      const profile = await this.providersService.updateProfile(updateProfileDto, user.sub);
+      return ResponseUtil.success(profile, 'Provider profile updated successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Get('profile')
   @Roles(RolesEnum.PROVIDER)
-  getProfile(@User() user: AuthUser) {
-    return this.providersService.getProfile(user.sub);
+  async getProfile(@User() user: AuthUser) {
+    try {
+      const profile = await this.providersService.getProfile(user.sub);
+      return ResponseUtil.success(profile, 'Provider profile retrieved successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Get()
-  findAll() {
-    return this.providersService.findAll();
+  async findAll() {
+    try {
+      const providers = await this.providersService.findAll();
+      return ResponseUtil.success(providers, 'Providers retrieved successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.providersService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    try {
+      const provider = await this.providersService.findOne(+id);
+      return ResponseUtil.success(provider, 'Provider retrieved successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }

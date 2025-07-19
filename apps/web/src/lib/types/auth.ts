@@ -29,7 +29,25 @@ export interface ProviderData {
   profileImage?: string;
 }
 
-export interface AuthResponse {
-  user: User;
-  token: string;
+export interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: T;
 }
+
+export interface AuthData {
+  accessToken: string;
+  role: {
+    id: number;
+    name: string;
+    description: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  type: string;
+  roleId: number;
+}
+
+export type AuthResponse = ApiResponse<AuthData>;
+

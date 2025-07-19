@@ -5,6 +5,7 @@ import {
   ConflictException 
 } from '@nestjs/common';
 import { DataSource, In } from 'typeorm';
+import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 import { ServiceRepository } from '../shared/repositories/service.repository';
 import { BookingRepository } from '../shared/repositories/booking.repository';
 import { TimeSlotRepository } from '../shared/repositories/time-slot.repository';
@@ -65,15 +66,17 @@ export class BookingsService {
     }
   }
 
-  async findByUserId(userId: number): Promise<Booking[]> {
-    return this.bookingRepository.find({
-      where: { userId },
-      relations: ['slot', 'slot.service'],
-      order: { createdAt: 'DESC' },
-    });
+  async findByUserId(userId: number, options: IPaginationOptions): Promise<Pagination<Booking>> {
+    const queryBuilder = this.bookingRepository.createQueryBuilder('booking')
+      .leftJoinAndSelect('booking.timeSlot', 'timeSlot')
+      .leftJoinAndSelect('timeSlot.service', 'service')
+      .where('booking.userId = :userId', { userId })
+      .orderBy('booking.createdAt', 'DESC');
+    
+    return paginate<Booking>(queryBuilder, options);
   }
 
-  async findByProviderId(providerId: number): Promise<Booking[]> {
+  async findByProviderId(providerId: number, options: IPaginationOptions): Promise<Pagination<Booking>> {
     // Find all services owned by this provider
     const services = await this.serviceRepository.find({
       where: { providerId },
@@ -90,12 +93,15 @@ export class BookingsService {
     
     const slotIds = slots.map(slot => slot.id);
     
-    // Find all bookings for these slots
-    return this.bookingRepository.find({
-      where: { timeSlotId: In(slotIds) },
-      relations: ['timeSlot', 'timeSlot.service', 'user'],
-      order: { createdAt: 'DESC' },
-    });
+    // Find all bookings for these slots using query builder for pagination
+    const queryBuilder = this.bookingRepository.createQueryBuilder('booking')
+      .leftJoinAndSelect('booking.timeSlot', 'timeSlot')
+      .leftJoinAndSelect('timeSlot.service', 'service')
+      .leftJoinAndSelect('booking.user', 'user')
+      .where('booking.timeSlotId IN (:...slotIds)', { slotIds })
+      .orderBy('booking.createdAt', 'DESC');
+    
+    return paginate<Booking>(queryBuilder, options);
   }
 
   async cancel(id: number, userId: number, roleName: string): Promise<Booking> {

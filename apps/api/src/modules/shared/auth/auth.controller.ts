@@ -20,7 +20,12 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() registerDto: RegisterValidation) {
-    return this.authService.register(registerDto);
+    try {
+      const user = await this.authService.register(registerDto);
+      return ResponseUtil.success(user, 'User registered successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Post('login')

@@ -4,7 +4,7 @@ import {
   Post,
   UseInterceptors,
   UploadedFile,
-  ConflictException,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadService } from './upload.service';
@@ -21,9 +21,9 @@ export class UploadController {
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     try {
       const result = await this.fileUploadService.uploadFile(file);
-      return ResponseUtil.success(result);
+      return ResponseUtil.success(result, 'File uploaded successfully');
     } catch (error) {
-      throw new ConflictException(error.message);
+      return ResponseUtil.error(error.message, HttpStatus.CONFLICT);
     }
   }
 }

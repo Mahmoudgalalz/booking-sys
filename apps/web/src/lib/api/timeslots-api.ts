@@ -1,5 +1,16 @@
 import { api } from './client';
-import type { ApiResponse } from './client';
+import type { ApiResponse } from '../types/auth';
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  meta: {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  };
+}
 
 export interface TimeSlot {
   id: number;
@@ -16,20 +27,24 @@ export interface TimeSlotCreateData {
 }
 
 export const timeSlotsApi = {
-  getTimeSlotsByService: (serviceId: number, date: string): ApiResponse<TimeSlot[]> => {
-    return api.get(`/time-slots?serviceId=${serviceId}&date=${date}`);
+  getTimeSlotsByService: async (serviceId: number, date: string, page = 1, limit = 10): Promise<PaginatedResponse<TimeSlot>> => {
+    const response = await api.get<ApiResponse<PaginatedResponse<TimeSlot>>>(`/time-slots?serviceId=${serviceId}&date=${date}&page=${page}&limit=${limit}`);
+    return response.data.data;
   },
 
-  getProviderTimeSlots: (date?: string): ApiResponse<TimeSlot[]> => {
-    const url = date ? `/providers/time-slots?date=${date}` : '/providers/time-slots';
-    return api.get(url);
+  getProviderTimeSlots: async (page = 1, limit = 10, date?: string): Promise<PaginatedResponse<TimeSlot>> => {
+    let url = `/providers/time-slots?page=${page}&limit=${limit}`;
+    if (date) url += `&date=${date}`;
+    const response = await api.get<ApiResponse<PaginatedResponse<TimeSlot>>>(url);
+    return response.data.data;
   },
 
-  createTimeSlots: (serviceId: number, data: TimeSlotCreateData): ApiResponse<TimeSlot[]> => {
-    return api.post(`/services/${serviceId}/time-slots`, data);
+  createTimeSlots: async (serviceId: number, data: TimeSlotCreateData): Promise<TimeSlot[]> => {
+    const response = await api.post<ApiResponse<TimeSlot[]>>(`/services/${serviceId}/time-slots`, data);
+    return response.data.data;
   },
 
-  deleteTimeSlot: (timeSlotId: number): ApiResponse<void> => {
-    return api.delete(`/time-slots/${timeSlotId}`);
+  deleteTimeSlot: async (timeSlotId: number): Promise<void> => {
+    await api.delete<ApiResponse<void>>(`/time-slots/${timeSlotId}`);
   },
 };

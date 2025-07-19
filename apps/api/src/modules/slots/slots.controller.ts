@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  HttpStatus,
 } from '@nestjs/common';
 import { SlotsService } from './slots.service';
 import { RolesGuard } from '../shared/auth/guards/roles.guard';
@@ -18,6 +19,8 @@ import { UpdateSlotValidation } from './validation/update-slot.validation';
 import { RolesEnum } from '../shared/enums/roles.enum';
 import { JwtAuthGuard } from '../shared/auth/guards/jwt-auth.guard';
 import { User } from '../shared/decorators/user.decorator';
+import { ResponseUtil } from '../shared/utils/response-util';
+import { IPaginationOptions } from 'nestjs-typeorm-paginate';
 
 @Controller('slots')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,35 +29,63 @@ export class SlotsController {
 
   @Post()
   @Roles(RolesEnum.PROVIDER)
-  create(@Body() createSlotDto: CreateSlotValidation, @User() user: AuthUser) {
-    return this.slotsService.create(createSlotDto, user.sub);
+  async create(@Body() createSlotDto: CreateSlotValidation, @User() user: AuthUser) {
+    try {
+      const slot = await this.slotsService.create(createSlotDto, user.sub);
+      return ResponseUtil.success(slot, 'Time slot created successfully', HttpStatus.CREATED);
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Get()
   @Roles(RolesEnum.PROVIDER, RolesEnum.USER)
-  findAll(@Query('serviceId') serviceId?: string) {
-    return this.slotsService.findAll(serviceId ? +serviceId : undefined);
+  async findAll(
+    @Query() options: IPaginationOptions,
+    @Query('serviceId') serviceId?: string
+  ) {
+    try {
+      const slots = await this.slotsService.findAll(options, serviceId ? +serviceId : undefined);
+      return ResponseUtil.success(slots, 'Time slots retrieved successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Get(':id')
   @Roles(RolesEnum.PROVIDER, RolesEnum.USER)
-  findOne(@Param('id') id: string) {
-    return this.slotsService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    try {
+      const slot = await this.slotsService.findOne(+id);
+      return ResponseUtil.success(slot, 'Time slot retrieved successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Patch(':id')
   @Roles(RolesEnum.PROVIDER)
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateSlotDto: UpdateSlotValidation,
     @User() user: AuthUser,
   ) {
-    return this.slotsService.update(+id, updateSlotDto, user.sub);
+    try {
+      const slot = await this.slotsService.update(+id, updateSlotDto, user.sub);
+      return ResponseUtil.success(slot, 'Time slot updated successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   @Delete(':id')
   @Roles(RolesEnum.PROVIDER)
-  remove(@Param('id') id: string, @User() user: AuthUser) {
-    return this.slotsService.remove(+id, user.sub);
+  async remove(@Param('id') id: string, @User() user: AuthUser) {
+    try {
+      await this.slotsService.remove(+id, user.sub);
+      return ResponseUtil.success(null, 'Time slot deleted successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
