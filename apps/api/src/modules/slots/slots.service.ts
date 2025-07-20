@@ -6,6 +6,20 @@ import { TimeSlot } from '../shared/entities/time-slots.entity';
 import { UpdateSlotValidation } from './validation/update-slot.validation';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 
+interface SlotInterval {
+  id: string;
+  slotId: number;
+  startTime: string;
+  endTime: string;
+  available: boolean;
+  duration: number;
+  service: {
+    id: number;
+    title: string;
+    duration: number;
+  };
+}
+
 @Injectable()
 export class SlotsService {
   constructor(
@@ -19,6 +33,21 @@ export class SlotsService {
     });
     if (!service) {
       throw new ForbiddenException('You can only create slots for your own services');
+    }
+
+    // Check if a slot with the same time already exists for this service
+    const existingSlot = await this.timeSlotRepository.findOne({
+      where: {
+        serviceId: createSlotDto.serviceId,
+        date: new Date(createSlotDto.date),
+        startTime: new Date(createSlotDto.startTime),
+        endTime: new Date(createSlotDto.endTime),
+        available: true, // Only check available slots
+      },
+    });
+
+    if (existingSlot) {
+      throw new ForbiddenException('A time slot with the same date and time already exists for this service');
     }
   
     const slot = this.timeSlotRepository.create({
@@ -53,22 +82,110 @@ export class SlotsService {
     return paginate<TimeSlot>(queryBuilder, options);
   }
   
-  async findAvailableSlotsByDay(serviceId: number, date: Date, options: IPaginationOptions): Promise<Pagination<TimeSlot>> {
+  async findAvailableSlotsByDay(serviceId: number, date: Date, options: IPaginationOptions): Promise<Pagination<SlotInterval>> {
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     
-    // Get both specific date slots and recurring slots for this day of week
-    const queryBuilder = this.timeSlotRepository.createQueryBuilder('timeSlot')
-      .leftJoinAndSelect('timeSlot.service', 'service')
-      .where('timeSlot.serviceId = :serviceId', { serviceId })
-      .andWhere('timeSlot.available = :available', { available: true })
-      .andWhere(
-        '(DATE(timeSlot.date) = DATE(:date) OR ' +
-        '(timeSlot.isRecurring = TRUE AND timeSlot.dayOfWeek = :dayOfWeek))'
-      )
-      .setParameters({ date: date.toISOString(), dayOfWeek })
-      .orderBy('timeSlot.startTime', 'ASC');
+    // Get the service to access duration
+    const service = await this.serviceRepository.findOne({
+      where: { id: serviceId },
+    });
     
-    return paginate<TimeSlot>(queryBuilder, options);
+    if (!service) {
+      throw new NotFoundException(`Service with ID ${serviceId} not found`);
+    }
+    
+    // Get both specific date slots and recurring slots for this day of week
+    const slots = await this.timeSlotRepository.find({
+      where: {
+        serviceId,
+        available: true,
+        isRecurring: true,
+        dayOfWeek,
+      },
+      relations: ['bookings'],
+      order: { startTime: 'ASC' },
+    });
+    
+    // Generate intervals for each slot based on service duration
+    const aggregatedIntervals: SlotInterval[] = [];
+    
+    for (const slot of slots) {
+      const intervals = this.generateIntervals(slot, Number(service.duration), date);
+      aggregatedIntervals.push(...intervals);
+    }
+    
+    // Sort intervals by start time
+    aggregatedIntervals.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    
+    // Apply pagination manually since we're returning custom data
+    const startIndex = (options.page - 1) * options.limit;
+    const endIndex = startIndex + options.limit;
+    const paginatedIntervals = aggregatedIntervals.slice(startIndex, endIndex);
+    
+    return {
+      items: paginatedIntervals,
+      meta: {
+        totalItems: aggregatedIntervals.length,
+        itemCount: paginatedIntervals.length,
+        itemsPerPage: options.limit,
+        totalPages: Math.ceil(aggregatedIntervals.length / options.limit),
+        currentPage: options.page,
+      },
+    };
+  }
+  
+  private generateIntervals(slot: TimeSlot, durationMinutes: number, targetDate: Date): SlotInterval[] {
+    const intervals: SlotInterval[] = [];
+    const slotStart = new Date(slot.startTime);
+    const slotEnd = new Date(slot.endTime);
+    
+    // Create intervals based on service duration
+    let currentTime = new Date(slotStart);
+    
+    while (currentTime < slotEnd) {
+      const intervalEnd = new Date(currentTime.getTime() + durationMinutes * 60000);
+      
+      // Don't create interval if it would exceed slot end time
+      if (intervalEnd > slotEnd) {
+        break;
+      }
+      
+      // Create the actual datetime for this interval on the target date
+      const intervalStartDateTime = new Date(targetDate);
+      intervalStartDateTime.setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0);
+      
+      const intervalEndDateTime = new Date(targetDate);
+      intervalEndDateTime.setHours(intervalEnd.getHours(), intervalEnd.getMinutes(), 0, 0);
+      
+      // Check if this interval is booked
+      const isBooked = slot.bookings?.some(booking => {
+        const bookingDate = new Date(booking.bookedAt);
+        return (
+          bookingDate.toDateString() === targetDate.toDateString() &&
+          bookingDate.getHours() === currentTime.getHours() &&
+          bookingDate.getMinutes() === currentTime.getMinutes()
+        );
+      }) || false;
+      
+      intervals.push({
+        id: `${slot.id}-${currentTime.getHours()}-${currentTime.getMinutes()}`,
+        slotId: slot.id,
+        startTime: intervalStartDateTime.toISOString(),
+        endTime: intervalEndDateTime.toISOString(),
+        available: !isBooked,
+        duration: durationMinutes,
+        service: {
+          id: slot.serviceId,
+          title: slot.service?.title || 'Unknown Service',
+          duration: durationMinutes,
+        },
+      });
+      
+      // Move to next interval
+      currentTime = new Date(currentTime.getTime() + durationMinutes * 60000);
+    }
+    
+    return intervals;
   }
 
   async findOne(id: number): Promise<TimeSlot> {

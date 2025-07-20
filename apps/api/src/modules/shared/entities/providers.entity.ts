@@ -23,7 +23,7 @@ export class Provider {
   specialization: string;
 
   @Column({ nullable: true })
-  experience: string;
+  experience: number;
 
   @Column({ nullable: true })
   profileImage: string;

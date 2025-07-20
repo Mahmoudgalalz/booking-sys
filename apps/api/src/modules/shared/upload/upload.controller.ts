@@ -35,8 +35,8 @@ export class UploadController {
   async getFile(@Param('filename') filename: string, @Res() res: Response) {
     try {
       const file = await this.fileUploadService.getFile(filename);
-      res.set('Content-Type', 'application/octet-stream');
-      res.set('Content-Disposition', `attachment; filename=${filename}`);
+      res.set('Content-Type', `image/${filename.split('.').pop()}`);
+      res.set('Content-Disposition', `inline; filename=${filename}`);
       res.send(file);
     } catch (error) {
       return ResponseUtil.error(error.message, HttpStatus.CONFLICT);

@@ -2,16 +2,20 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { Like } from 'typeorm';
 import { ServiceRepository } from '../shared/repositories/service.repository';
 import { ProviderRepository } from '../shared/repositories/provider.repository';
+import { TimeSlotRepository } from '../shared/repositories/time-slot.repository';
 import { CreateServiceValidation } from './validation/create-service.validation';
 import { UpdateServiceValidation } from './validation/update-service.validation';
 import { Service } from '../shared/entities/services.entity';
+import { TimeSlot } from '../shared/entities/time-slots.entity';
 import { IPaginationOptions, Pagination, paginate } from 'nestjs-typeorm-paginate';
+import { AuthUser } from '../shared/types/auth-user.type';
 
 @Injectable()
 export class ServicesService {
   constructor(
     private readonly serviceRepository: ServiceRepository,
     private readonly providerRepository: ProviderRepository,
+    private readonly timeSlotRepository: TimeSlotRepository,
   ) {}
 
   async create(createServiceDto: CreateServiceValidation, userId: number): Promise<Service> {
@@ -19,17 +23,55 @@ export class ServicesService {
       where: { userId }
     });
     
+    // Create service without time slots first
     const service = this.serviceRepository.create({
-      ...createServiceDto,
+      title: createServiceDto.title,
+      description: createServiceDto.description,
+      duration: createServiceDto.duration,
+      category: createServiceDto.category,
+      image: createServiceDto.image,
       providerId: provider?.id,
     });
     
-    return this.serviceRepository.save(service);
+    // Save the service to get the ID
+    const savedService = await this.serviceRepository.save(service);
+    
+    // Create and save time slots
+    const timeSlots: TimeSlot[] = [];
+    for (const slot of createServiceDto.slots) {
+      const timeSlot = this.timeSlotRepository.create({
+        date: new Date(slot.date),
+        startTime: new Date(slot.startTime),
+        endTime: new Date(slot.endTime),
+        serviceId: savedService.id,
+        available: true,
+        dayOfWeek: slot.dayOfWeek,
+        isRecurring: slot.isRecurring || false,
+      });
+      const savedTimeSlot = await this.timeSlotRepository.save(timeSlot);
+      timeSlots.push(savedTimeSlot);
+    }
+    
+    // Return the service with its time slots
+    const serviceWithTimeSlots = await this.serviceRepository.findOne({
+      where: { id: savedService.id },
+      relations: ['timeSlots']
+    });
+    
+    if (!serviceWithTimeSlots) {
+      throw new NotFoundException('Service not found after creation');
+    }
+    
+    return serviceWithTimeSlots;
   }
 
-  async findAll(userId: number, pagination: IPaginationOptions, category?: string, search?: string): Promise<Pagination<Service>> {
+  async findAll(user: AuthUser, pagination: IPaginationOptions, category?: string, search?: string): Promise<Pagination<Service>> {
     const whereCondition: any = {};
-    
+    const paginateOptions = {
+      limit: pagination.limit || 10,
+      page: pagination.page || 1,
+      
+    }
     if (category) {
       whereCondition.category = category;
     }
@@ -38,20 +80,23 @@ export class ServicesService {
       whereCondition.title = Like(`%${search}%`);
     }
     
-    const services = this.serviceRepository.createQueryBuilder('service')
-      .leftJoinAndSelect('service.provider', 'provider')
+    const services = this.serviceRepository.createQueryBuilder('services')
+      .leftJoinAndSelect('services.provider', 'provider')
+      .leftJoinAndSelect('services.timeSlots', 'timeSlots')
       .where(whereCondition)
-    if(userId) {
-      services.andWhere('provider.userId = :userId', { userId });
+    if(user && user.role === 'provider') {
+      services.andWhere('provider.userId = :userId', { userId: user.userId });
     }
 
-    return paginate(services, pagination);
+    console.log(await services.getMany());
+
+    return paginate(services, paginateOptions);
   }
 
   async findOne(id: number): Promise<Service> {
     const service = await this.serviceRepository.findOne({
       where: { id },
-      relations: ['provider', 'slots'],
+      relations: ['provider', 'timeSlots'],
     });
     
     if (!service) {

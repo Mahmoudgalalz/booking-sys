@@ -7,8 +7,8 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
-  JoinColumn,
   OneToMany,
+  JoinColumn,
   Check,
 } from 'typeorm';
 import { Service } from './services.entity';
@@ -59,4 +59,5 @@ export class TimeSlot {
 
   @OneToMany(() => Booking, (booking) => booking.timeSlot)
   bookings: Booking[];
+
 }

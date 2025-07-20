@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useUserStore } from '../../store/userStore';
 import { useUserBookings, useProviderBookings, useCancelBooking } from '../../api/bookings';
 import type { Booking } from '../../api/bookings';
+import { formatTime } from '../../lib/utils/time-utils';
 
 export default function BookingsPage() {
   const { isProvider } = useUserStore();
@@ -92,12 +93,11 @@ export default function BookingsPage() {
             </thead>
             <tbody>
               {bookings.map((booking: Booking) => {
-                // Format date and time
-                const startTime = new Date(booking.slot?.startTime || '');
-                const endTime = new Date(booking.slot?.endTime || '');
-                const date = startTime.toLocaleDateString();
-                const time = `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                              ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                // Format date and time using the new time utility
+                const startTimeStr = booking.slot?.startTime || '';
+                const endTimeStr = booking.slot?.endTime || '';
+                const date = booking.slot?.date ? new Date(booking.slot.date).toLocaleDateString() : 'N/A';
+                const time = `${formatTime(startTimeStr)} - ${formatTime(endTimeStr)}`;
                 
                 return (
                   <tr key={booking.id} className="hover:bg-gray-50">

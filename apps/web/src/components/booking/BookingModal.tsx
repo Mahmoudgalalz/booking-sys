@@ -3,23 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import type { TimeSlot } from '../../lib/api/timeslots-api';
 import { timeSlotsApi } from '../../lib/api/timeslots-api';
 import { useBookingMutations } from '../../lib/hooks/useBookingMutations';
-
-interface Service {
-  id: number;
-  title: string;
-  price: number;
-  duration: number;
-  provider: {
-    id: number;
-    user: {
-      firstName: string;
-      lastName: string;
-    };
-  };
-}
+import { formatTime } from '../../lib/utils/time-utils';
+import type { Service, TimeSlot as ServiceTimeSlot } from '../../api/services';
 
 interface BookingModalProps {
   service: Service;
+  selectedTimeSlot?: ServiceTimeSlot | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -41,13 +30,7 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
     });
   };
   
-  // Format time for display
-  const formatTime = (timeString: string) => {
-    return new Date(timeString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+
   
   // Generate available dates (next 14 days)
   const getAvailableDates = () => {
@@ -78,6 +61,7 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
   const handleBooking = () => {
     if (selectedTimeSlot) {
       createBookingOptimistic.mutate({
+        serviceId: service.id,
         timeSlotId: selectedTimeSlot.id,
         notes: bookingNotes
       }, {
@@ -104,8 +88,7 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
         </div>
         
         <p className="mb-4">
-          Select a date and time to book this service with {service.provider.user.firstName}{' '}
-          {service.provider.user.lastName}.
+          Select a date and time to book this service.
         </p>
         
         {/* Date selection */}
@@ -138,13 +121,13 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
             <div className="text-center py-4 text-red-500">
               Error loading time slots. Please try again.
             </div>
-          ) : !timeSlotsQuery.data || timeSlotsQuery.data.length === 0 ? (
+          ) : !timeSlotsQuery.data || timeSlotsQuery.data.items.length === 0 ? (
             <div className="text-center py-4 text-gray-500">
               No available time slots for this date. Please select another date.
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              {timeSlotsQuery.data.map((slot) => (
+              {timeSlotsQuery.data.items.map((slot) => (
                 <button
                   key={slot.id}
                   onClick={() => setSelectedTimeSlot(slot)}
@@ -197,7 +180,7 @@ export default function BookingModal({ service, onClose, onSuccess }: BookingMod
               <span>{service.duration} minutes</span>
               
               <span className="text-gray-600">Price:</span>
-              <span>${service.price.toFixed(2)}</span>
+              <span>${service.price ? service.price.toFixed(2) : 'N/A'}</span>
             </div>
           </div>
         )}

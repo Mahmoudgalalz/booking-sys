@@ -22,7 +22,7 @@ import { User } from '../shared/decorators/user.decorator';
 import { ResponseUtil } from '../shared/utils/response-util';
 import { IPaginationOptions } from 'nestjs-typeorm-paginate';
 
-@Controller('slots')
+@Controller('time-slots')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SlotsController {
   constructor(private readonly slotsService: SlotsService) {}

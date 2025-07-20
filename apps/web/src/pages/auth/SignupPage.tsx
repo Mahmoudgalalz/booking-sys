@@ -47,11 +47,8 @@ export default function SignupPage() {
       
       await loginMutation.mutateAsync(loginCredentials);
       
-      if (selectedRole === 'provider') { // Provider role ID
-        setCurrentStep(SignupStep.PROVIDER_INFO);
-      } else {
-        setCurrentStep(SignupStep.COMPLETE);
-      }
+      // Skip provider info step during registration - handle it conditionally in the UI
+      setCurrentStep(SignupStep.COMPLETE);
     } catch (error) {
       console.error('Registration failed:', error);
     }

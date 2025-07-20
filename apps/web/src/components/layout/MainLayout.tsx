@@ -27,22 +27,7 @@ export default function MainLayout({
               
               {isAuthenticated && (
                 <nav className="hidden md:flex space-x-6">
-                  {isProvider ? (
-                    <>
-                      <a 
-                        href="/provider" 
-                        className="text-gray-600 hover:text-indigo-600 transition-colors"
-                      >
-                        Dashboard
-                      </a>
-                      <a 
-                        href="/provider/services" 
-                        className="text-gray-600 hover:text-indigo-600 transition-colors"
-                      >
-                        My Services
-                      </a>
-                    </>
-                  ) : (
+                  {!isProvider && (
                     <>
                       <a 
                         href="/home" 

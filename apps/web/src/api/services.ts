@@ -2,32 +2,64 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { $fetchThrow } from './client';
 import type { ApiResponse } from '../lib/types/auth';
 
+export interface TimeSlot {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  dayOfWeek: number;
+  isRecurring: boolean;
+  available: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  serviceId: number;
+}
+
 export interface Service {
   id: number;
   title: string;
   description: string;
-  price: number;
+  price?: number;
   category: string;
-  image: string;
+  image: string | null;
   duration: number;
-  providerId?: number;
+  isActive: boolean;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  providerId: number;
   provider: {
     id: number;
     bio: string;
-    user: {
-      firstName: string;
-      lastName: string;
-    };
+    specialization: string;
+    experience: number;
+    profileImage: string;
+    isVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+    userId: number;
   };
+  timeSlots: TimeSlot[];
+}
+
+export interface CreateSlotData {
+  date: string;
+  duration: number;
+  startTime: number;
+  endTime: number;
+  dayOfWeek: number;
+  isRecurring: boolean;
 }
 
 export interface CreateServiceData {
   title: string;
   description: string;
-  price: number;
   category: string;
   image?: string;
   duration: number;
+  slots: CreateSlotData[];
 }
 
 export interface UpdateServiceData {
@@ -69,8 +101,16 @@ export const useServices = (page: number = 1, search: string = '', category: str
         if (search) url += `&search=${encodeURIComponent(search)}`;
         if (category) url += `&category=${encodeURIComponent(category)}`;
         
-        const response = await $fetchThrow<ApiResponse<PaginatedResponse<Service>>>(url);
-        return response.data;
+        const response = await $fetchThrow<ApiResponse<BackendPaginatedResponse<Service>>>(url);
+        return {
+          data: response.data.items,
+          meta: {
+            total: response.data.meta.totalItems,
+            currentPage: response.data.meta.currentPage,
+            lastPage: response.data.meta.totalPages,
+            perPage: response.data.meta.itemsPerPage
+          }
+        };
       } catch (error) {
         console.error('Failed to fetch services:', error);
         throw error;
@@ -86,8 +126,7 @@ export const useProviderServices = (page: number = 1) => {
     queryKey: ['provider-services', page],
     queryFn: async () => {
       try {
-        const response = await $fetchThrow<ApiResponse<BackendPaginatedResponse<Service>>>(`/services/my-services?page=${page}`);
-        // Transform the backend response to match the expected format in the component
+        const response = await $fetchThrow<ApiResponse<BackendPaginatedResponse<Service>>>(`/services?page=${page}`);
         return {
           data: response.data.items,
           meta: {

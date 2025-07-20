@@ -85,6 +85,20 @@ export class BookingsService {
     
     const serviceIds = services.map(service => service.id);
     
+    // If provider has no services, return empty result
+    if (serviceIds.length === 0) {
+      return {
+        items: [],
+        meta: {
+          totalItems: 0,
+          itemCount: 0,
+          itemsPerPage: Number(options.limit) || 10,
+          totalPages: 0,
+          currentPage: Number(options.page) || 1,
+        },
+      };
+    }
+    
     // Find all slots for these services
     const slots = await this.slotRepository.find({
       where: { serviceId: In(serviceIds) },
@@ -92,6 +106,20 @@ export class BookingsService {
     });
     
     const slotIds = slots.map(slot => slot.id);
+    
+    // If no slots exist, return empty result
+    if (slotIds.length === 0) {
+      return {
+        items: [],
+        meta: {
+          totalItems: 0,
+          itemCount: 0,
+          itemsPerPage: Number(options.limit) || 10,
+          totalPages: 0,
+          currentPage: Number(options.page) || 1,
+        },
+      };
+    }
     
     // Find all bookings for these slots using query builder for pagination
     const queryBuilder = this.bookingRepository.createQueryBuilder('booking')

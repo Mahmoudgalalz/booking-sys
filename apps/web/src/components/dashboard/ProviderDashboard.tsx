@@ -4,6 +4,8 @@ import { ServicesTab } from '../../components/provider/ServicesTab';
 import { BookingsTab } from '../../components/provider/BookingsTab';
 import { DashboardHeader } from '../../components/provider/DashboardHeader';
 import { useUserStore } from '../../store/userStore';
+import { ProviderProvider } from '../../contexts/ProviderContext';
+import { ProviderInfoModal } from '../provider/ProviderInfoModal';
 
 type Tab = 'services' | 'bookings';
 
@@ -15,6 +17,8 @@ export default function ProviderDashboard() {
   const userName = user ? `${user.firstName} ${user.lastName}` : 'Provider';
 
   return (
+    <ProviderProvider>
+
     <div className="container mx-auto px-4 py-8">
       <DashboardHeader userName={userName} />
       
@@ -38,5 +42,7 @@ export default function ProviderDashboard() {
         </TabsContent>
       </Tabs>
     </div>
+    <ProviderInfoModal />
+    </ProviderProvider>
   );
 }

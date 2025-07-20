@@ -49,7 +49,7 @@ export const useLogin = () => {
         userStore.setToken(data.data.accessToken);
         
         // Set provider flag if user has provider role
-        if (data.data.role.name === 'Provider') {
+        if (data.data.role === 'provider') {
           userStore.setIsProvider(true);
         }
         
@@ -102,7 +102,7 @@ export const useRegister = () => {
             userStore.setToken(loginResponse.data.accessToken);
             
             // Set provider flag if user registered as provider
-            if (loginResponse.data.role.name === 'Provider') {
+            if (loginResponse.data.role === 'provider') {
               userStore.setIsProvider(true);
             }
             
@@ -154,7 +154,7 @@ export const fetchUserProfile = async (): Promise<User | null> => {
       useUserStore.getState().setUser(response.data);
       
       // Set provider flag if user has provider role
-      if (response.data.role.name === 'Provider') {
+      if (response.data.role === 'provider') {
         useUserStore.getState().setIsProvider(true);
       }
       

@@ -9,8 +9,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './users.entity';
-import { TimeSlot } from './time-slots.entity';
 import { Service } from './services.entity';
+import { TimeSlot } from './time-slots.entity';
 import { BookingStatus } from '../enums/booking.enum';
 
 @Entity('bookings')

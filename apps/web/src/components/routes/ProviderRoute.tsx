@@ -9,7 +9,7 @@ export default function ProviderRoute() {
     return <Navigate to="/" />;
   }
   
-  if (user.role?.name !== 'Provider') {
+  if (user.role !== 'provider') {
     return <Navigate to="/home" />;
   }
   

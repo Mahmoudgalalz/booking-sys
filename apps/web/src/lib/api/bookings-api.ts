@@ -1,12 +1,20 @@
-import { api } from './client';
+import { $fetchThrow } from '../../api/client';
+
+export interface BookingCreateData {
+  serviceId: number;
+  timeSlotId: number;
+  notes?: string;
+}
 
 export interface Booking {
   id: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
   createdAt: string;
+  updatedAt: string;
   timeSlot: {
     id: number;
+    date: string;
     startTime: string;
     endTime: string;
   };
@@ -19,33 +27,65 @@ export interface Booking {
   service: {
     id: number;
     title: string;
+    description: string;
+    duration: number;
+    price?: number;
   };
 }
 
-export interface BookingCreateData {
-  timeSlotId: number;
-  notes?: string;
+export interface PaginatedBookingsResponse {
+  items: Booking[];
+  meta: {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  };
 }
 
-
 export const bookingsApi = {
-  getUserBookings: async (): Promise<Booking[]> => {
-    const response = await api.get<Booking[]>('/bookings/user');
-    return response.data;
-  },
-
-  getProviderBookings: async (): Promise<Booking[]> => {
-    const response = await api.get<Booking[]>('/bookings/provider');
-    return response.data;
-  },
-
+  // Create a new booking
   createBooking: async (data: BookingCreateData): Promise<Booking> => {
-    const response = await api.post<Booking>('/bookings', data);
-    return response.data;
+    return $fetchThrow('/api/bookings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   },
 
+  // Get bookings for the current user
+  getUserBookings: async (page = 1, limit = 10): Promise<PaginatedBookingsResponse> => {
+    return $fetchThrow(`/api/bookings/user?page=${page}&limit=${limit}`);
+  },
+
+  // Get bookings for a provider
+  getProviderBookings: async (page = 1, limit = 10): Promise<PaginatedBookingsResponse> => {
+    return $fetchThrow(`/api/bookings/provider?page=${page}&limit=${limit}`);
+  },
+
+  // Update booking status
   updateBookingStatus: async (bookingId: number, status: string): Promise<Booking> => {
-    const response = await api.put<Booking>(`/bookings/${bookingId}/status`, { status });
-    return response.data;
+    return $fetchThrow(`/api/bookings/${bookingId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+
+  // Cancel a booking
+  cancelBooking: async (bookingId: number): Promise<Booking> => {
+    return $fetchThrow(`/api/bookings/${bookingId}/cancel`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Get a specific booking by ID
+  getBooking: async (bookingId: number): Promise<Booking> => {
+    return $fetchThrow(`/api/bookings/${bookingId}`);
   },
 };

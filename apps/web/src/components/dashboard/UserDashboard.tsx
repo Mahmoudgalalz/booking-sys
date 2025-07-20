@@ -6,12 +6,13 @@ import { UserHeader } from '../../components/common/UserHeader';
 import { ServicesList } from '../../components/services/ServicesList';
 import BookingModal from '../../components/booking/BookingModal';
 import { useUserStore } from '../../store/userStore';
-import type { Service } from '../../api/services';
+import type { Service, TimeSlot } from '../../api/services';
 
 export default function UserDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   
   const { user } = useUserStore();
@@ -31,15 +32,18 @@ export default function UserDashboard() {
     setCurrentPage(page);
   };
   
-  // Open booking modal for a service
-  const openBookingModal = (service: Service) => {
+  // Open booking modal for a service and optionally a specific time slot
+  const openBookingModal = (service: Service, timeSlot?: TimeSlot) => {
     setSelectedService(service);
+    setSelectedTimeSlot(timeSlot || null);
     setIsBookingModalOpen(true);
   };
   
   // Handle successful booking
   const handleBookingSuccess = () => {
     setIsBookingModalOpen(false);
+    setSelectedService(null);
+    setSelectedTimeSlot(null);
     // Could refresh services data here if needed
   };
   
@@ -80,6 +84,7 @@ export default function UserDashboard() {
       {isBookingModalOpen && selectedService && (
         <BookingModal
           service={selectedService}
+          selectedTimeSlot={selectedTimeSlot}
           onClose={() => setIsBookingModalOpen(false)}
           onSuccess={handleBookingSuccess}
         />

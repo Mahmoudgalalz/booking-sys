@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, IsNumber, Min, Max } from 'class-validator';
 
 export class UpdateProviderProfileDto {
   @IsString()
@@ -11,10 +11,11 @@ export class UpdateProviderProfileDto {
   @MaxLength(100)
   specialization?: string;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  @MaxLength(100)
-  experience?: string;
+  @Min(0)
+  @Max(100)
+  experience?: number;
 
   @IsString()
   @IsOptional()

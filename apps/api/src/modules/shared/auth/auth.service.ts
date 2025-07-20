@@ -32,7 +32,7 @@ export class AuthService {
   }
 
   async getProfile(id: number) {
-    return this.userRepository.findOne({ where: { id } });
+    return this.userRepository.findOne({ where: { id }, relations: ['provider'] });
   }
 
   async login(data: LoginValidation) {

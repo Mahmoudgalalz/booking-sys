@@ -43,7 +43,7 @@ export class ServicesController {
   async findAll(@User() user: AuthUser, @Query() pagination: IPaginationOptions,
     @Query('category') category?: string, @Query('search') search?: string) {
     try {
-      const services = await this.servicesService.findAll(user.userId, pagination, category, search);
+      const services = await this.servicesService.findAll(user, pagination, category, search);
       return ResponseUtil.success(services, 'Services retrieved successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
