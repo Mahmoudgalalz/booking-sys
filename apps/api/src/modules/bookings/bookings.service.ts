@@ -11,6 +11,8 @@ import { BookingRepository } from '../shared/repositories/booking.repository';
 import { TimeSlotRepository } from '../shared/repositories/time-slot.repository';
 import { CreateBookingValidation } from './validation/create-booking.validation';
 import { Booking } from '../shared/entities/bookings.entity';
+import { TimeSlot } from '../shared/entities/time-slots.entity';
+import { ProviderRepository } from '../shared/repositories/provider.repository';
 
 @Injectable()
 export class BookingsService {
@@ -18,50 +20,104 @@ export class BookingsService {
     private readonly bookingRepository: BookingRepository,
     private readonly slotRepository: TimeSlotRepository,
     private readonly serviceRepository: ServiceRepository,
+    private readonly providerRepository: ProviderRepository,
     private dataSource: DataSource,
   ) {}
 
   async create(createBookingDto: CreateBookingValidation, userId: number): Promise<Booking> {
-    // Start a transaction to ensure atomicity
+    // Start a transaction
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
     
     try {
-      const slot = await this.slotRepository.findOne({
-        where: { id: createBookingDto.slotId },
-        relations: ['service'],
-        lock: { mode: 'pessimistic_write' }, // Lock the row to prevent concurrent bookings
+      // First, lock the slot row to prevent concurrent bookings (without relations)
+      const lockedSlot = await queryRunner.manager.findOne(TimeSlot, {
+        where: { id: createBookingDto.timeSlotId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      
+      if (!lockedSlot) {
+        throw new NotFoundException(`Slot with ID ${createBookingDto.timeSlotId} not found`);
+      }
+      
+      // Then load the slot with relations (now that it's locked)
+      const slot = await queryRunner.manager.findOne(TimeSlot, {
+        where: { id: createBookingDto.timeSlotId },
+        relations: ['service', 'bookings'],
       });
       
       if (!slot) {
-        throw new NotFoundException(`Slot with ID ${createBookingDto.slotId} not found`);
+        throw new NotFoundException(`Slot with ID ${createBookingDto.timeSlotId} not found`);
       }
       
+      // Check if the slot is available
       if (!slot.available) {
-        throw new ConflictException('This slot is already booked');
+        throw new ConflictException('This time slot is not available for booking');
+      }
+      
+      // Parse the requested booking time
+      const requestedBookingTime = new Date(createBookingDto.bookedAt);
+      
+      // Check if the specific time interval is already booked
+      const existingBooking = slot.bookings?.find(booking => {
+        const bookingDate = new Date(booking.bookedAt);
+        return bookingDate.getTime() === requestedBookingTime.getTime();
+      });
+      
+      if (existingBooking && existingBooking.status !== 'cancelled') {
+        throw new ConflictException('This specific time interval is already booked');
+      }
+      
+      // Validate that the booking time falls within the slot's time range
+      const slotStart = new Date(slot.startTime);
+      const slotEnd = new Date(slot.endTime);
+      const bookingHour = requestedBookingTime.getHours();
+      const bookingMinute = requestedBookingTime.getMinutes();
+      
+      if (bookingHour < slotStart.getHours() || 
+          bookingHour > slotEnd.getHours() ||
+          (bookingHour === slotEnd.getHours() && bookingMinute >= slotEnd.getMinutes())) {
+        throw new ConflictException('Booking time is outside the available slot time range');
       }
       
       // Create the booking
       const booking = this.bookingRepository.create({
         userId,
-        timeSlotId: createBookingDto.slotId,
+        serviceId: slot.service.id, // Get serviceId from the time slot's service relation
+        timeSlotId: createBookingDto.timeSlotId,
         status: 'confirmed',
+        bookedAt: requestedBookingTime,
+        notes: createBookingDto.notes,
       });
       
       // Save the booking
       const savedBooking = await queryRunner.manager.save(booking);
       
-      slot.available = false;
-      await queryRunner.manager.save(slot);
+      // Check if all intervals in this slot are now booked
+      // If so, mark the slot as unavailable
+      const service = slot.service;
+      const durationMinutes = Number(service.duration);
+      const totalSlotMinutes = (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60);
+      const maxBookings = Math.floor(totalSlotMinutes / durationMinutes);
       
+      const activeBookings = slot.bookings?.filter(b => b.status !== 'cancelled').length || 0;
+      
+      if (activeBookings + 1 >= maxBookings) {
+        slot.available = false;
+        await queryRunner.manager.save(slot);
+      }
+      
+      // Commit the transaction
       await queryRunner.commitTransaction();
       
       return savedBooking;
     } catch (error) {
+      // Rollback the transaction in case of error
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
+      // Release the query runner
       await queryRunner.release();
     }
   }
@@ -76,10 +132,18 @@ export class BookingsService {
     return paginate<Booking>(queryBuilder, options);
   }
 
-  async findByProviderId(providerId: number, options: IPaginationOptions): Promise<Pagination<Booking>> {
+  async findByProviderId(userId: number, options: IPaginationOptions): Promise<Pagination<Booking>> {
     // Find all services owned by this provider
+    const provider = await this.providerRepository.findOne({
+      where: { userId },
+    });
+    
+    if (!provider) {
+      throw new NotFoundException(`Provider with userId ${userId} not found`);
+    }
+    
     const services = await this.serviceRepository.find({
-      where: { providerId },
+      where: { providerId: provider.id },
       select: ['id'],
     });
     
@@ -127,7 +191,7 @@ export class BookingsService {
       .leftJoinAndSelect('timeSlot.service', 'service')
       .leftJoinAndSelect('booking.user', 'user')
       .where('booking.timeSlotId IN (:...slotIds)', { slotIds })
-      .andWhere('service.providerId = :providerId', { providerId })
+      .andWhere('service.providerId = :providerId', { providerId: provider.id })
       .orderBy('booking.createdAt', 'DESC');
     
     return paginate<Booking>(queryBuilder, options);
@@ -136,7 +200,7 @@ export class BookingsService {
   async cancel(id: number, userId: number, roleName: string): Promise<Booking> {
     const booking = await this.bookingRepository.findOne({
       where: { id },
-      relations: ['timeSlot', 'timeSlot.service'],
+      relations: ['timeSlot', 'timeSlot.service', 'timeSlot.bookings'],
     });
     
     if (!booking) {
@@ -177,10 +241,25 @@ export class BookingsService {
       booking.status = 'cancelled';
       await queryRunner.manager.save(booking);
       
-      // Update the slot to make it available again
+      // Check if the slot should be made available again
       const slot = booking.timeSlot;
-      slot.available = true;
-      await queryRunner.manager.save(slot);
+      const service = slot.service;
+      const durationMinutes = Number(service.duration);
+      const slotStart = new Date(slot.startTime);
+      const slotEnd = new Date(slot.endTime);
+      const totalSlotMinutes = (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60);
+      const maxBookings = Math.floor(totalSlotMinutes / durationMinutes);
+      
+      // Count active bookings (excluding the one being cancelled)
+      const activeBookings = slot.bookings?.filter(b => 
+        b.status !== 'cancelled' && b.id !== booking.id
+      ).length || 0;
+      
+      // If there are now available intervals, mark the slot as available
+      if (activeBookings < maxBookings) {
+        slot.available = true;
+        await queryRunner.manager.save(slot);
+      }
       
       // Commit the transaction
       await queryRunner.commitTransaction();

@@ -30,7 +30,7 @@ export default function ProviderDashboard() {
         </TabsList>
         
         <TabsContent value="services">
-          <ServicesTab onEditService={() => {}} />
+          <ServicesTab />
         </TabsContent>
         
         <TabsContent value="bookings">

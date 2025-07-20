@@ -66,31 +66,32 @@ export class ServicesService {
   }
 
   async findAll(user: AuthUser, pagination: IPaginationOptions, category?: string, search?: string): Promise<Pagination<Service>> {
-    const whereCondition: any = {};
     const paginateOptions = {
       limit: pagination.limit || 10,
       page: pagination.page || 1,
-      
-    }
+    };
+    
+    const queryBuilder = this.serviceRepository.createQueryBuilder('services')
+      .leftJoinAndSelect('services.provider', 'provider')
+      .leftJoinAndSelect('services.timeSlots', 'timeSlots');
+    
+    // Apply filters
     if (category) {
-      whereCondition.category = category;
+      queryBuilder.andWhere('services.category = :category', { category });
     }
     
     if (search) {
-      whereCondition.title = Like(`%${search}%`);
+      queryBuilder.andWhere('services.title LIKE :search', { search: `%${search}%` });
     }
     
-    const services = this.serviceRepository.createQueryBuilder('services')
-      .leftJoinAndSelect('services.provider', 'provider')
-      .leftJoinAndSelect('services.timeSlots', 'timeSlots')
-      .where(whereCondition)
-    if(user && user.role === 'provider') {
-      services.andWhere('provider.userId = :userId', { userId: user.userId });
+    // Filter by provider if user is a provider
+    if (user && user.role === 'provider') {
+      queryBuilder.andWhere('provider.userId = :userId', { userId: user.userId });
     }
+    
+    queryBuilder.orderBy('services.createdAt', 'DESC');
 
-    console.log(await services.getMany());
-
-    return paginate(services, paginateOptions);
+    return paginate(queryBuilder, paginateOptions);
   }
 
   async findOne(id: number): Promise<Service> {
@@ -106,10 +107,11 @@ export class ServicesService {
     return service;
   }
 
-  async update(id: number, updateServiceDto: UpdateServiceValidation, providerId: number): Promise<Service> {
+  async update(id: number, updateServiceDto: UpdateServiceValidation, userId: number): Promise<Service> {
     const service = await this.findOne(id);
     
-    if (service.providerId !== providerId) {
+    // Check if the service belongs to the provider (compare provider's userId)
+    if (service.provider?.userId !== userId) {
       throw new ForbiddenException('You can only update your own services');
     }
     
@@ -117,10 +119,11 @@ export class ServicesService {
     return this.findOne(id);
   }
 
-  async remove(id: number, providerId: number): Promise<void> {
+  async remove(id: number, userId: number): Promise<void> {
     const service = await this.findOne(id);
     
-    if (service.providerId !== providerId) {
+    // Check if the service belongs to the provider (compare provider's userId)
+    if (service.provider?.userId !== userId) {
       throw new ForbiddenException('You can only delete your own services');
     }
     

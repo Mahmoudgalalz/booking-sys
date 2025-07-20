@@ -42,33 +42,18 @@ export interface BookableInterval {
 }
 
 export const timeSlotsApi = {
-  getTimeSlotsByService: async (serviceId: number, date: string, page = 1, limit = 10): Promise<PaginatedResponse<TimeSlot>> => {
+  getTimeSlotsByService: async (serviceId: number, date: string): Promise<BookableInterval[]> => {
     try {
-      const response = await api.get<ApiResponse<PaginatedResponse<TimeSlot>>>(`/time-slots/by-date?serviceId=${serviceId}&date=${date}&page=${page}&limit=${limit}`);
-      // Ensure we always return a valid response, even if data is missing
-      return response.data?.data || {
-        items: [],
-        meta: {
-          totalItems: 0,
-          itemCount: 0,
-          itemsPerPage: limit,
-          totalPages: 0,
-          currentPage: page
-        }
-      };
+      const response = await api.get<BookableInterval[]>(`/time-slots/by-date?serviceId=${serviceId}&date=${date}`);
+      // Ensure we always return a valid array, even if data is missing
+      if (response.data) {
+        return response.data;
+      }
+      return [];
     } catch (error) {
-      // Return empty response on error instead of throwing
+      // Return empty array on error instead of throwing
       console.error('Error fetching time slots:', error);
-      return {
-        items: [],
-        meta: {
-          totalItems: 0,
-          itemCount: 0,
-          itemsPerPage: limit,
-          totalPages: 0,
-          currentPage: page
-        }
-      };
+      return [];
     }
   },
 
@@ -76,9 +61,9 @@ export const timeSlotsApi = {
     try {
       let url = `/providers/time-slots?page=${page}&limit=${limit}`;
       if (date) url += `&date=${date}`;
-      const response = await api.get<ApiResponse<PaginatedResponse<TimeSlot>>>(url);
+      const response = await api.get<PaginatedResponse<TimeSlot>>(url);
       // Ensure we always return a valid response, even if data is missing
-      return response.data?.data || {
+      return response.data || {
         items: [],
         meta: {
           totalItems: 0,
@@ -106,9 +91,9 @@ export const timeSlotsApi = {
 
   createTimeSlots: async (serviceId: number, data: TimeSlotCreateData): Promise<TimeSlot[]> => {
     try {
-      const response = await api.post<ApiResponse<TimeSlot[]>>(`/services/${serviceId}/time-slots`, data);
+      const response = await api.post<TimeSlot[]>(`/services/${serviceId}/time-slots`, data);
       // Ensure we always return a valid array, even if data is missing
-      return response.data?.data || [];
+      return response.data || [];
     } catch (error) {
       // Return empty array on error and let the calling code handle the error
       console.error('Error creating time slots:', error);
@@ -122,8 +107,9 @@ export const timeSlotsApi = {
 
   getBookableIntervals: async (serviceId: number, date: string): Promise<BookableInterval[]> => {
     try {
-      const response = await api.get<ApiResponse<BookableInterval[]>>(`/time-slots?serviceId=${serviceId}&date=${date}`);
-      return response.data?.data || [];
+      const response = await api.get<BookableInterval[]>(`/time-slots?serviceId=${serviceId}&date=${date}`);
+      // The API client already unwraps the response, so response.data contains the BookableInterval[]
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching bookable intervals:', error);
       return [];

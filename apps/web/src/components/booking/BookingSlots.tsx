@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BookableIntervals } from './BookableIntervals';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { Calendar, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface BookingSlotsProps {
   serviceId?: number;

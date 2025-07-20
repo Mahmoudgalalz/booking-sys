@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useProviderServices, useCreateService, useDeleteService, type Service, type CreateSlotData } from '../../api/services';
+import { useProviderServices, useCreateService, useDeleteService, type CreateSlotData } from '../../api/services';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
@@ -8,11 +8,7 @@ import { Textarea } from '../ui/textarea';
 import { FileUpload } from '../ui/FileUpload';
 import { Plus, Trash2, Calendar, Clock } from 'lucide-react';
 
-interface ServicesTabProps {
-  onEditService: (service: Service) => void;
-}
-
-export function ServicesTab({ onEditService }: ServicesTabProps) {
+export function ServicesTab() {
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [newService, setNewService] = useState({
@@ -227,15 +223,7 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
               <CardContent>
                 <p className="text-sm text-gray-500">{service.description}</p>
               </CardContent>
-              <CardFooter className="flex justify-end space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-indigo-600 border-indigo-600 hover:bg-indigo-50"
-                  onClick={() => onEditService(service)}
-                >
-                  Edit
-                </Button>
+              <CardFooter className="flex justify-end">
                 <Button 
                   variant="outline" 
                   size="sm"

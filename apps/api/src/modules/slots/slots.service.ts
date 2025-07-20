@@ -97,7 +97,7 @@ export class SlotsService {
       throw new NotFoundException(`Service with ID ${serviceId} not found`);
     }
     
-    // Get recurring slots for this day of week
+    // Get recurring slots for this day of week with bookings loaded
     const slots = await this.timeSlotRepository.find({
       where: {
         serviceId,
@@ -105,6 +105,7 @@ export class SlotsService {
         isRecurring: true,
         dayOfWeek,
       },
+      relations: ['bookings'],
       order: { startTime: 'ASC' },
     });
 

@@ -1,72 +1,41 @@
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, Clock, User, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { formatTime } from '../../lib/utils/time-utils';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { cn } from '../../lib/utils/cn';
-
-// Define interfaces locally since bookings-api was deleted
-interface Booking {
-  id: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  notes?: string;
-  createdAt: string;
-  timeSlot: {
-    id: number;
-    startTime: string;
-    endTime: string;
-  };
-  user: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  service: {
-    id: number;
-    title: string;
-  };
-}
-
-interface PaginatedBookingsResponse {
-  items: Booking[];
-  meta: {
-    totalItems: number;
-    itemCount: number;
-    itemsPerPage: number;
-    totalPages: number;
-    currentPage: number;
-  };
-}
-
-// Mock API function since the original was deleted
-const getProviderBookings = async (): Promise<PaginatedBookingsResponse> => {
-  // This would normally call the actual API
-  // For now, return empty result to prevent errors
-  return {
-    items: [],
-    meta: {
-      totalItems: 0,
-      itemCount: 0,
-      itemsPerPage: 10,
-      totalPages: 0,
-      currentPage: 1
-    }
-  };
-};
+import { bookingsApi, type PaginatedBookingsResponse } from '../../lib/api/bookings-api';
 
 export function BookingsTab() {
-  const bookingsQuery = useQuery({
+  const bookingsQuery = useQuery<PaginatedBookingsResponse>({
     queryKey: ['provider-bookings'],
-    queryFn: getProviderBookings,
+    queryFn: () => bookingsApi.getProviderBookings(),
   });
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+
+
+  const formatTimeFromISO = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
     });
+  };
+
+  const formatBookedAt = (bookedAt: string) => {
+    const date = new Date(bookedAt);
+    return {
+      date: date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }),
+      time: date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      })
+    };
   };
 
 
@@ -155,7 +124,7 @@ export function BookingsTab() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{booking.service.title}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{booking.timeSlot.service.title}</h3>
                         <span className={cn(
                           "inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full",
                           getStatusBadgeClass(booking.status)
@@ -172,9 +141,19 @@ export function BookingsTab() {
                         <div className="flex items-center space-x-1">
                           <Clock className="w-4 h-4" />
                           <span>
-                            {formatDate(booking.timeSlot.startTime)} at {formatTime(booking.timeSlot.startTime)} - {formatTime(booking.timeSlot.endTime)}
+                            {(() => {
+                              const bookedTime = formatBookedAt(booking.bookedAt);
+                              return `${bookedTime.date} at ${bookedTime.time}`;
+                            })()} 
+                            ({formatTimeFromISO(booking.timeSlot.startTime)} - {formatTimeFromISO(booking.timeSlot.endTime)})
                           </span>
                         </div>
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        <span>Service Duration: {booking.timeSlot.service.duration} minutes</span>
+                        {booking.timeSlot.service.category && (
+                          <span className="ml-3">Category: {booking.timeSlot.service.category}</span>
+                        )}
                       </div>
                       {booking.notes && (
                         <p className="mt-2 text-sm text-gray-600 italic">Note: {booking.notes}</p>

@@ -1,7 +1,15 @@
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, IsDateString, IsOptional } from 'class-validator';
 
 export class CreateBookingValidation {
   @IsNotEmpty()
   @IsNumber()
-  slotId: number;
+  timeSlotId: number;
+
+  @IsNotEmpty()
+  @IsDateString()
+  bookedAt: string; // ISO string for the specific booking time
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

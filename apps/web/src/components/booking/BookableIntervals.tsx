@@ -1,9 +1,8 @@
-import React from 'react';
 import { useBookableIntervals } from '../../lib/api/timeslots-api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
 import { Clock, Calendar, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { Button } from '../ui/button';
 
 interface BookableIntervalsProps {
   serviceId: number;

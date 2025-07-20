@@ -1,8 +1,8 @@
 import { $fetchThrow } from '../../api/client';
 
 export interface BookingCreateData {
-  serviceId: number;
   timeSlotId: number;
+  bookedAt: string; // ISO date string for the specific booking time
   notes?: string;
 }
 
@@ -10,26 +10,51 @@ export interface Booking {
   id: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
+  bookedAt: string;
+  reminderSent: boolean;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
+  userId: number;
+  serviceId: number;
+  timeSlotId: number;
   timeSlot: {
     id: number;
     date: string;
     startTime: string;
     endTime: string;
+    dayOfWeek: number;
+    isRecurring: boolean;
+    available: boolean;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string | null;
+    serviceId: number;
+    service: {
+      id: number;
+      title: string;
+      description: string;
+      category: string;
+      duration: number;
+      image: string | null;
+      isActive: boolean;
+      metadata: Record<string, unknown> | null;
+      createdAt: string;
+      updatedAt: string;
+      deletedAt: string | null;
+      providerId: number;
+    };
   };
   user: {
     id: number;
+    email: string;
     firstName: string;
     lastName: string;
-    email: string;
-  };
-  service: {
-    id: number;
-    title: string;
-    description: string;
-    duration: number;
-    price?: number;
+    password: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    role: string;
   };
 }
 
@@ -47,7 +72,7 @@ export interface PaginatedBookingsResponse {
 export const bookingsApi = {
   // Create a new booking
   createBooking: async (data: BookingCreateData): Promise<Booking> => {
-    return $fetchThrow('/api/bookings', {
+    return $fetchThrow('/bookings', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {
@@ -58,17 +83,18 @@ export const bookingsApi = {
 
   // Get bookings for the current user
   getUserBookings: async (page = 1, limit = 10): Promise<PaginatedBookingsResponse> => {
-    return $fetchThrow(`/api/bookings/user?page=${page}&limit=${limit}`);
+    return $fetchThrow(`/bookings/user?page=${page}&limit=${limit}`);
   },
 
   // Get bookings for a provider
   getProviderBookings: async (page = 1, limit = 10): Promise<PaginatedBookingsResponse> => {
-    return $fetchThrow(`/api/bookings/provider?page=${page}&limit=${limit}`);
+    const x = await $fetchThrow(`/bookings/provider?page=${page}&limit=${limit}`);
+    return x.data;
   },
 
   // Update booking status
   updateBookingStatus: async (bookingId: number, status: string): Promise<Booking> => {
-    return $fetchThrow(`/api/bookings/${bookingId}/status`, {
+    return $fetchThrow(`/bookings/${bookingId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
       headers: {
@@ -79,13 +105,13 @@ export const bookingsApi = {
 
   // Cancel a booking
   cancelBooking: async (bookingId: number): Promise<Booking> => {
-    return $fetchThrow(`/api/bookings/${bookingId}/cancel`, {
+    return $fetchThrow(`/bookings/${bookingId}/cancel`, {
       method: 'PATCH',
     });
   },
 
   // Get a specific booking by ID
   getBooking: async (bookingId: number): Promise<Booking> => {
-    return $fetchThrow(`/api/bookings/${bookingId}`);
+    return $fetchThrow(`/bookings/${bookingId}`);
   },
 };
