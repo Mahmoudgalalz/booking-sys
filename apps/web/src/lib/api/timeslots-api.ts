@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { ApiResponse } from '../types/auth';
+import { useQuery } from '@tanstack/react-query';
 
 export interface PaginatedResponse<T> {
   items: T[];
@@ -24,6 +25,20 @@ export interface TimeSlotCreateData {
   startTime: string;
   endTime: string;
   interval: number;
+}
+
+export interface BookableInterval {
+  id: string;
+  slotId: number;
+  startTime: string;
+  endTime: string;
+  booked: boolean;
+  serviceId: number;
+  service: {
+    id: number;
+    title: string;
+    duration: number;
+  };
 }
 
 export const timeSlotsApi = {
@@ -104,4 +119,26 @@ export const timeSlotsApi = {
   deleteTimeSlot: async (timeSlotId: number): Promise<void> => {
     await api.delete<ApiResponse<void>>(`/time-slots/${timeSlotId}`);
   },
+
+  getBookableIntervals: async (serviceId: number, date: string): Promise<BookableInterval[]> => {
+    try {
+      const response = await api.get<ApiResponse<BookableInterval[]>>(`/time-slots?serviceId=${serviceId}&date=${date}`);
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching bookable intervals:', error);
+      return [];
+    }
+  },
+};
+
+// React Query hooks
+export const useBookableIntervals = (serviceId: number, date: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['bookable-intervals', serviceId, date],
+    queryFn: () => timeSlotsApi.getBookableIntervals(serviceId, date),
+    enabled: enabled && !!serviceId && !!date,
+    refetchInterval: 10000, // Poll every 10 seconds
+    refetchIntervalInBackground: true,
+    staleTime: 5000, // Consider data stale after 5 seconds
+  });
 };
