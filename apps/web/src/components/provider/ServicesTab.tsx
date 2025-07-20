@@ -27,10 +27,10 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
   const [newSlot, setNewSlot] = useState<CreateSlotData>({
     date: '',
     duration: 30,
-    startTime: 9, // 9 AM
-    endTime: 10, // 10 AM
+    startTime: '09:00', // 9:00 AM
+    endTime: '10:00', // 10:00 AM
     dayOfWeek: 1, // Monday
-    isRecurring: false,
+    isRecurring: true, // Only recurring slots
   });
 
   // Use the newer API hooks
@@ -64,31 +64,27 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
     });
   };
 
-  // Handle adding a slot
+  // Handle adding a slot (only recurring slots supported)
   const handleAddSlot = () => {
-    if (newSlot.date || newSlot.isRecurring) {
-      const slotToAdd = { ...newSlot };
-      
-      // For non-recurring slots, convert date to ISO 8601 format
-      if (!newSlot.isRecurring && newSlot.date) {
-        // Convert date string (YYYY-MM-DD) to ISO 8601 format
-        const dateObj = new Date(newSlot.date + 'T00:00:00.000Z');
-        slotToAdd.date = dateObj.toISOString();
-      }
-      
-      setNewService({
-        ...newService,
-        slots: [...newService.slots, slotToAdd],
-      });
-      setNewSlot({
-        date: '',
-        duration: 30,
-        startTime: 9,
-        endTime: 10,
-        dayOfWeek: 1,
-        isRecurring: false,
-      });
-    }
+    // Only add recurring slots
+    const slotToAdd = {
+      ...newSlot,
+      date: new Date().toISOString(), // Use current date as placeholder for recurring slots
+      isRecurring: true
+    };
+    
+    setNewService({
+      ...newService,
+      slots: [...newService.slots, slotToAdd],
+    });
+    setNewSlot({
+      date: '',
+      duration: 30,
+      startTime: '09:00',
+      endTime: '10:00',
+      dayOfWeek: 1,
+      isRecurring: true,
+    });
   };
 
   // Handle removing a slot
@@ -118,14 +114,16 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
     
     // Process slots to ensure proper date and time formatting for backend
     const processedSlots = newService.slots.map(slot => {
-      // Convert hour numbers to ISO 8601 time strings
-      // Create a base date (1970-01-01) and set the hours/minutes
+      // Convert HH:MM time strings to ISO 8601 time strings
+      // Parse the time string (e.g., "09:00") and create ISO date
+      const [startHour, startMinute] = slot.startTime.split(':').map(Number);
       const startTimeDate = new Date('1970-01-01T00:00:00.000Z');
-      startTimeDate.setUTCHours(slot.startTime, 0, 0, 0);
+      startTimeDate.setUTCHours(startHour, startMinute, 0, 0);
       const startTimeISO = startTimeDate.toISOString();
       
+      const [endHour, endMinute] = slot.endTime.split(':').map(Number);
       const endTimeDate = new Date('1970-01-01T00:00:00.000Z');
-      endTimeDate.setUTCHours(slot.endTime, 0, 0, 0);
+      endTimeDate.setUTCHours(endHour, endMinute, 0, 0);
       const endTimeISO = endTimeDate.toISOString();
       
       let processedDate = slot.date;
@@ -179,10 +177,10 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
         setNewSlot({
           date: '',
           duration: 30,
-          startTime: 9,
-          endTime: 10,
+          startTime: '09:00',
+          endTime: '10:00',
           dayOfWeek: 1,
-          isRecurring: false,
+          isRecurring: true,
         });
       });
   };
@@ -397,52 +395,24 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
               
               {/* Add New Slot Form */}
               <div className="border border-gray-200 rounded-md p-3 space-y-3">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isRecurring"
-                    checked={newSlot.isRecurring}
-                    onChange={(e) => handleSlotChange('isRecurring', e.target.checked)}
-                    className="rounded"
-                  />
-                  <label htmlFor="isRecurring" className="text-sm font-medium text-gray-700">
-                    Recurring weekly slot
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Day of Week (Recurring Weekly Slot)
                   </label>
+                  <select
+                    value={newSlot.dayOfWeek}
+                    onChange={(e) => handleSlotChange('dayOfWeek', Number(e.target.value))}
+                    className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value={0}>Sunday</option>
+                    <option value={1}>Monday</option>
+                    <option value={2}>Tuesday</option>
+                    <option value={3}>Wednesday</option>
+                    <option value={4}>Thursday</option>
+                    <option value={5}>Friday</option>
+                    <option value={6}>Saturday</option>
+                  </select>
                 </div>
-                
-                {newSlot.isRecurring ? (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Day of Week
-                    </label>
-                    <select
-                      value={newSlot.dayOfWeek}
-                      onChange={(e) => handleSlotChange('dayOfWeek', Number(e.target.value))}
-                      className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value={0}>Sunday</option>
-                      <option value={1}>Monday</option>
-                      <option value={2}>Tuesday</option>
-                      <option value={3}>Wednesday</option>
-                      <option value={4}>Thursday</option>
-                      <option value={5}>Friday</option>
-                      <option value={6}>Saturday</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={newSlot.date}
-                      onChange={(e) => handleSlotChange('date', e.target.value)}
-                      className="text-sm"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                )}
                 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
@@ -451,14 +421,17 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
                     </label>
                     <select
                       value={newSlot.startTime}
-                      onChange={(e) => handleSlotChange('startTime', Number(e.target.value))}
+                      onChange={(e) => handleSlotChange('startTime', e.target.value)}
                       className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
                     >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <option key={i} value={i}>
-                          {i.toString().padStart(2, '0')}:00
-                        </option>
-                      ))}
+                      {Array.from({ length: 24 }, (_, i) => {
+                        const timeString = i.toString().padStart(2, '0') + ':00';
+                        return (
+                          <option key={i} value={timeString}>
+                            {timeString}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   <div>
@@ -467,14 +440,18 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
                     </label>
                     <select
                       value={newSlot.endTime}
-                      onChange={(e) => handleSlotChange('endTime', Number(e.target.value))}
+                      onChange={(e) => handleSlotChange('endTime', e.target.value)}
                       className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm"
                     >
-                      {Array.from({ length: 24 }, (_, i) => i + 1).map((hour) => (
-                        <option key={hour} value={hour}>
-                          {hour.toString().padStart(2, '0')}:00
-                        </option>
-                      ))}
+                      {Array.from({ length: 24 }, (_, i) => {
+                        const hour = i + 1;
+                        const timeString = hour.toString().padStart(2, '0') + ':00';
+                        return (
+                          <option key={hour} value={timeString}>
+                            {timeString}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 </div>
@@ -485,7 +462,6 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  disabled={!newSlot.date && !newSlot.isRecurring}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Time Slot

@@ -1,19 +1,20 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { ServiceRepository } from '../shared/repositories/service.repository';
-import { TimeSlotRepository } from '../shared/repositories/time-slot.repository';
-import { CreateSlotValidation } from './validation/create-slot.validation';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { TimeSlot } from '../shared/entities/time-slots.entity';
+import { Service } from '../shared/entities/services.entity';
+import { CreateSlotValidation } from './validation/create-slot.validation';
 import { UpdateSlotValidation } from './validation/update-slot.validation';
 import { IPaginationOptions, paginate, Pagination } from 'nestjs-typeorm-paginate';
 
-interface SlotInterval {
+interface BookableInterval {
   id: string;
   slotId: number;
   startTime: string;
   endTime: string;
-  available: boolean;
-  duration: number;
-  service: {
+  booked: boolean;
+  serviceId: number;
+  service?: {
     id: number;
     title: string;
     duration: number;
@@ -23,8 +24,10 @@ interface SlotInterval {
 @Injectable()
 export class SlotsService {
   constructor(
-    private readonly serviceRepository: ServiceRepository,
-    private readonly timeSlotRepository: TimeSlotRepository,
+    @InjectRepository(Service)
+    private readonly serviceRepository: Repository<Service>,
+    @InjectRepository(TimeSlot)
+    private readonly timeSlotRepository: Repository<TimeSlot>,
   ) {}
 
   async create(createSlotDto: CreateSlotValidation, providerId: number): Promise<TimeSlot> {
@@ -82,7 +85,7 @@ export class SlotsService {
     return paginate<TimeSlot>(queryBuilder, options);
   }
   
-  async findAvailableSlotsByDay(serviceId: number, date: Date, options: IPaginationOptions): Promise<Pagination<SlotInterval>> {
+  async findAvailableSlotsByDay(serviceId: number, date: Date): Promise<BookableInterval[]> {
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     
     // Get the service to access duration
@@ -94,7 +97,7 @@ export class SlotsService {
       throw new NotFoundException(`Service with ID ${serviceId} not found`);
     }
     
-    // Get both specific date slots and recurring slots for this day of week
+    // Get recurring slots for this day of week
     const slots = await this.timeSlotRepository.find({
       where: {
         serviceId,
@@ -102,42 +105,29 @@ export class SlotsService {
         isRecurring: true,
         dayOfWeek,
       },
-      relations: ['bookings'],
       order: { startTime: 'ASC' },
     });
+
     
-    // Generate intervals for each slot based on service duration
-    const aggregatedIntervals: SlotInterval[] = [];
+    // Generate bookable intervals for each slot
+    const allIntervals: BookableInterval[] = [];
     
     for (const slot of slots) {
-      const intervals = this.generateIntervals(slot, Number(service.duration), date);
-      aggregatedIntervals.push(...intervals);
+      const intervals = this.generateBookableIntervals(slot, service, date);
+      allIntervals.push(...intervals);
     }
     
     // Sort intervals by start time
-    aggregatedIntervals.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    allIntervals.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
     
-    // Apply pagination manually since we're returning custom data
-    const startIndex = (options.page - 1) * options.limit;
-    const endIndex = startIndex + options.limit;
-    const paginatedIntervals = aggregatedIntervals.slice(startIndex, endIndex);
-    
-    return {
-      items: paginatedIntervals,
-      meta: {
-        totalItems: aggregatedIntervals.length,
-        itemCount: paginatedIntervals.length,
-        itemsPerPage: options.limit,
-        totalPages: Math.ceil(aggregatedIntervals.length / options.limit),
-        currentPage: options.page,
-      },
-    };
+    return allIntervals;
   }
   
-  private generateIntervals(slot: TimeSlot, durationMinutes: number, targetDate: Date): SlotInterval[] {
-    const intervals: SlotInterval[] = [];
+  private generateBookableIntervals(slot: TimeSlot, service: Service, targetDate: Date): BookableInterval[] {
+    const intervals: BookableInterval[] = [];
     const slotStart = new Date(slot.startTime);
     const slotEnd = new Date(slot.endTime);
+    const durationMinutes = Number(service.duration);
     
     // Create intervals based on service duration
     let currentTime = new Date(slotStart);
@@ -157,7 +147,7 @@ export class SlotsService {
       const intervalEndDateTime = new Date(targetDate);
       intervalEndDateTime.setHours(intervalEnd.getHours(), intervalEnd.getMinutes(), 0, 0);
       
-      // Check if this interval is booked
+      // Check if this specific interval time is booked
       const isBooked = slot.bookings?.some(booking => {
         const bookingDate = new Date(booking.bookedAt);
         return (
@@ -172,12 +162,12 @@ export class SlotsService {
         slotId: slot.id,
         startTime: intervalStartDateTime.toISOString(),
         endTime: intervalEndDateTime.toISOString(),
-        available: !isBooked,
-        duration: durationMinutes,
+        booked: isBooked,
+        serviceId: slot.serviceId,
         service: {
-          id: slot.serviceId,
-          title: slot.service?.title || 'Unknown Service',
-          duration: durationMinutes,
+          id: service.id,
+          title: service.title,
+          duration: service.duration,
         },
       });
       

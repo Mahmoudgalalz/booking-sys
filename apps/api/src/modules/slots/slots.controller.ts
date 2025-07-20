@@ -60,7 +60,6 @@ export class SlotsController {
   @Get('by-date')
   @Roles(RolesEnum.USER, RolesEnum.PROVIDER)
   async findByDate(
-    @Query() options: IPaginationOptions,
     @Query('serviceId') serviceId: string,
     @Query('date') dateString: string
   ) {
@@ -74,7 +73,7 @@ export class SlotsController {
         return ResponseUtil.error('Invalid date format', HttpStatus.BAD_REQUEST);
       }
       
-      const slots = await this.slotsService.findAvailableSlotsByDay(+serviceId, date, options);
+      const slots = await this.slotsService.findAvailableSlotsByDay(+serviceId, date);
       return ResponseUtil.success(slots, 'Time slots for date retrieved successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);

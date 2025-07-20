@@ -47,8 +47,8 @@ export interface Service {
 export interface CreateSlotData {
   date: string;
   duration: number;
-  startTime: number;
-  endTime: number;
+  startTime: string; // Time in HH:MM format
+  endTime: string; // Time in HH:MM format
   dayOfWeek: number;
   isRecurring: boolean;
 }

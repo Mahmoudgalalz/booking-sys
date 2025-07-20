@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsNumber, IsOptional, IsDateString, IsBoolean, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsDateString, IsBoolean, ValidateNested, IsDate } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateServiceValidation {
@@ -38,12 +38,12 @@ export class CreateSlotValidation {
   duration: number;
 
   @IsNotEmpty()
-  @IsNumber()
-  startTime: number;
+  @IsDateString()
+  startTime: string;
 
   @IsNotEmpty()
-  @IsNumber()
-  endTime: number;
+  @IsDateString()
+  endTime: string;
 
   @IsNotEmpty()
   @IsNumber()
