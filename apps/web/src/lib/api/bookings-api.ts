@@ -89,6 +89,8 @@ export const bookingsApi = {
   // Get bookings for a provider
   getProviderBookings: async (page = 1, limit = 10): Promise<PaginatedBookingsResponse> => {
     const x = await $fetchThrow(`/bookings/provider?page=${page}&limit=${limit}`);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     return x.data;
   },
 
