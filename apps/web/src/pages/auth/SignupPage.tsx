@@ -5,7 +5,7 @@ import { RoleSelectionForm } from '../../components/forms/auth/RoleSelectionForm
 import { BasicInfoForm } from '../../components/forms/auth/BasicInfoForm';
 import { ProviderInfoForm } from '../../components/forms/auth/ProviderInfoForm';
 import { SignupComplete } from '../../components/auth/SignupComplete';
-import type { ProviderData, RegisterData, LoginCredentials } from '../../lib/types/auth';
+import type { ProviderData, RegisterData, LoginCredentials, Role } from '../../lib/types/auth';
 
 const SignupStep = {
   ROLE_SELECTION: 0,
@@ -19,28 +19,23 @@ type SignupStep = typeof SignupStep[keyof typeof SignupStep];
 export default function SignupPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<SignupStep>(SignupStep.ROLE_SELECTION);
-  const [selectedRole, setSelectedRole] = useState<number | null>(null);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [registrationData, setRegistrationData] = useState<RegisterData | null>(null);
   
-  // Register mutation with TanStack Query and Better Fetch
   const registerMutation = useRegister();
   
-  // Provider profile mutation with TanStack Query and Better Fetch
   const providerProfileMutation = useCompleteProviderProfile();
   
-  // Login mutation
   const loginMutation = useLogin();
   
-  // Handle role selection
-  const handleRoleSelect = (roleId: number) => {
-    setSelectedRole(roleId);
+  const handleRoleSelect = (role: Role) => {
+    setSelectedRole(role);
     setCurrentStep(SignupStep.BASIC_INFO);
   };
   
   // Handle basic info submission
   const handleBasicInfoSubmit = async (data: RegisterData) => {
     try {
-      console.log(data);
       setRegistrationData(data);
       await registerMutation.mutateAsync(data);
       
@@ -52,7 +47,7 @@ export default function SignupPage() {
       
       await loginMutation.mutateAsync(loginCredentials);
       
-      if (selectedRole === 2) { // Provider role ID
+      if (selectedRole === 'provider') { // Provider role ID
         setCurrentStep(SignupStep.PROVIDER_INFO);
       } else {
         setCurrentStep(SignupStep.COMPLETE);
@@ -90,31 +85,61 @@ export default function SignupPage() {
   const renderStep = () => {
     switch (currentStep) {
       case SignupStep.ROLE_SELECTION:
-        return <RoleSelectionForm onRoleSelect={handleRoleSelect} />;
+        return (
+          <div className="flex min-h-full flex-1 flex-col justify-center px-6 lg:px-8">
+            <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+              <RoleSelectionForm onRoleSelect={handleRoleSelect} />
+            </div>
+          </div>
+        );
         
       case SignupStep.BASIC_INFO:
         return (
-          <BasicInfoForm 
-            onSubmit={handleBasicInfoSubmit}
-            isLoading={registerMutation.isPending}
-            error={registerMutation.error as Error | null}
-            selectedRole={selectedRole || 1}
-            onBack={() => setCurrentStep(SignupStep.ROLE_SELECTION)}
-          />
+          <div className="flex min-h-full flex-1 flex-col justify-center px-6 lg:px-8">
+            <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+              <BasicInfoForm 
+                onSubmit={handleBasicInfoSubmit}
+                isLoading={registerMutation.isPending}
+                error={registerMutation.error as Error | null}
+                selectedRole={selectedRole || 'user'}
+                onBack={() => setCurrentStep(SignupStep.ROLE_SELECTION)}
+              />
+            </div>
+          </div>
         );
         
       case SignupStep.PROVIDER_INFO:
         return (
-          <ProviderInfoForm 
-            onSubmit={handleProviderInfoSubmit}
-            isLoading={providerProfileMutation.isPending}
-            error={providerProfileMutation.error as Error | null}
-            onSkip={() => setCurrentStep(SignupStep.COMPLETE)}
-          />
+          <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+            <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+              <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-indigo-800">
+                Complete your provider profile
+              </h2>
+            </div>
+            <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+              <ProviderInfoForm 
+                onSubmit={handleProviderInfoSubmit}
+                isLoading={providerProfileMutation.isPending}
+                error={providerProfileMutation.error as Error | null}
+                onSkip={() => setCurrentStep(SignupStep.COMPLETE)}
+              />
+            </div>
+          </div>
         );
         
       case SignupStep.COMPLETE:
-        return <SignupComplete onContinue={() => navigate({href: '/home'})} />;
+        return (
+          <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+            <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+              <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-indigo-800">
+                Registration Complete
+              </h2>
+            </div>
+            <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+              <SignupComplete onContinue={() => navigate({ to: '/home' })} />
+            </div>
+          </div>
+        );
     }
   };
   

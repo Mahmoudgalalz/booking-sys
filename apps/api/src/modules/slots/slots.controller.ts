@@ -31,7 +31,7 @@ export class SlotsController {
   @Roles(RolesEnum.PROVIDER)
   async create(@Body() createSlotDto: CreateSlotValidation, @User() user: AuthUser) {
     try {
-      const slot = await this.slotsService.create(createSlotDto, user.sub);
+      const slot = await this.slotsService.create(createSlotDto, user.userId);
       return ResponseUtil.success(slot, 'Time slot created successfully', HttpStatus.CREATED);
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -39,14 +39,43 @@ export class SlotsController {
   }
 
   @Get()
-  @Roles(RolesEnum.PROVIDER, RolesEnum.USER)
+  @Roles(RolesEnum.USER, RolesEnum.PROVIDER)
   async findAll(
     @Query() options: IPaginationOptions,
-    @Query('serviceId') serviceId?: string
+    @Query('serviceId') serviceId?: string,
+    @Query('dayOfWeek') dayOfWeek?: string
   ) {
     try {
-      const slots = await this.slotsService.findAll(options, serviceId ? +serviceId : undefined);
+      const slots = await this.slotsService.findAll(
+        options, 
+        serviceId ? +serviceId : undefined,
+        dayOfWeek ? +dayOfWeek : undefined
+      );
       return ResponseUtil.success(slots, 'Time slots retrieved successfully');
+    } catch (err) {
+      return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('by-date')
+  @Roles(RolesEnum.USER, RolesEnum.PROVIDER)
+  async findByDate(
+    @Query() options: IPaginationOptions,
+    @Query('serviceId') serviceId: string,
+    @Query('date') dateString: string
+  ) {
+    try {
+      if (!serviceId || !dateString) {
+        return ResponseUtil.error('ServiceId and date are required', HttpStatus.BAD_REQUEST);
+      }
+      
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return ResponseUtil.error('Invalid date format', HttpStatus.BAD_REQUEST);
+      }
+      
+      const slots = await this.slotsService.findAvailableSlotsByDay(+serviceId, date, options);
+      return ResponseUtil.success(slots, 'Time slots for date retrieved successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -71,7 +100,7 @@ export class SlotsController {
     @User() user: AuthUser,
   ) {
     try {
-      const slot = await this.slotsService.update(+id, updateSlotDto, user.sub);
+      const slot = await this.slotsService.update(+id, updateSlotDto, user.userId);
       return ResponseUtil.success(slot, 'Time slot updated successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -82,7 +111,7 @@ export class SlotsController {
   @Roles(RolesEnum.PROVIDER)
   async remove(@Param('id') id: string, @User() user: AuthUser) {
     try {
-      await this.slotsService.remove(+id, user.sub);
+      await this.slotsService.remove(+id, user.userId);
       return ResponseUtil.success(null, 'Time slot deleted successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);

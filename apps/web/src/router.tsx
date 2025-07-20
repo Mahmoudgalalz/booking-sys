@@ -6,6 +6,7 @@ import HomeRoute from './components/routes/HomeRoute';
 import SignupRoute from './components/routes/SignupRoute';
 import LoginRoute from './components/routes/LoginRoute';
 import ProviderRoute from './components/routes/ProviderRoute';
+import BookingsRoute from './components/routes/BookingsRoute';
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -44,12 +45,19 @@ const providerRoute = createRoute({
   component: ProviderRoute
 });
 
+const bookingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/bookings',
+  component: BookingsRoute
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   homeRoute,
   signupRoute,
   loginRoute,
-  providerRoute
+  providerRoute,
+  bookingsRoute
 ]);
 
 export const router = createRouter({

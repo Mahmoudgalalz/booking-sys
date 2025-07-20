@@ -38,7 +38,7 @@ export class BookingsService {
         throw new NotFoundException(`Slot with ID ${createBookingDto.slotId} not found`);
       }
       
-      if (!slot.isAvailable) {
+      if (!slot.available) {
         throw new ConflictException('This slot is already booked');
       }
       
@@ -52,7 +52,7 @@ export class BookingsService {
       // Save the booking
       const savedBooking = await queryRunner.manager.save(booking);
       
-      slot.isAvailable = false;
+      slot.available = false;
       await queryRunner.manager.save(slot);
       
       await queryRunner.commitTransaction();
@@ -99,6 +99,7 @@ export class BookingsService {
       .leftJoinAndSelect('timeSlot.service', 'service')
       .leftJoinAndSelect('booking.user', 'user')
       .where('booking.timeSlotId IN (:...slotIds)', { slotIds })
+      .andWhere('service.providerId = :providerId', { providerId })
       .orderBy('booking.createdAt', 'DESC');
     
     return paginate<Booking>(queryBuilder, options);
@@ -150,7 +151,7 @@ export class BookingsService {
       
       // Update the slot to make it available again
       const slot = booking.timeSlot;
-      slot.isAvailable = true;
+      slot.available = true;
       await queryRunner.manager.save(slot);
       
       // Commit the transaction

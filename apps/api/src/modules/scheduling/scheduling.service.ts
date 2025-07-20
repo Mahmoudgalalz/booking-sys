@@ -26,8 +26,8 @@ export class SchedulingService {
         status: 'confirmed',
         reminderSent: false,
         timeSlot: {
-          startTime: LessThan(thirtyMinutesFromNow),
-          endTime: MoreThan(now),
+          date: LessThan(thirtyMinutesFromNow),
+          available: false, // Only booked slots
         },
       },
       relations: ['user', 'timeSlot', 'timeSlot.service'],
@@ -36,16 +36,16 @@ export class SchedulingService {
     for (const booking of bookings) {
       try {
         // In a real application, you would send an email here
-        this.logger.log(`Sending reminder email to ${booking.user.email} for appointment at ${booking.timeSlot.startTime}`);
+        this.logger.log(`Sending reminder email to ${booking.user.email} for appointment at ${booking.timeSlot.date} ${booking.timeSlot.startTime}`);
         
         // For demonstration purposes, we'll just log the reminder
         this.logger.log(`
           Subject: Reminder: Your appointment is in 30 minutes
           
-          Dear ${booking.user.name},
+          Dear ${booking.user.firstName} ${booking.user.lastName},
           
           This is a reminder that your appointment for ${booking.timeSlot.service.title} 
-          is scheduled to begin in 30 minutes at ${booking.timeSlot.startTime}.
+          is scheduled to begin in 30 minutes at ${booking.timeSlot.date} ${booking.timeSlot.startTime}.
           
           Thank you for using our service!
         `);
@@ -69,7 +69,7 @@ export class SchedulingService {
       where: {
         status: 'confirmed',
         timeSlot: {
-          endTime: LessThan(now),
+          date: LessThan(now),
         },
       },
     });

@@ -32,31 +32,28 @@ export class AuthService {
   }
 
   async getProfile(id: number) {
-    return this.userRepository.findOne({ where: { id }, relations: ['role'] });
+    return this.userRepository.findOne({ where: { id } });
   }
 
   async login(data: LoginValidation) {
     const loggedInUser = await this.userRepository.findOne({
       where: { email: data.email },
-      relations: ['role'],
     });
     if(!loggedInUser) {
       throw new UnauthorizedException('User not found');
     }
     const payload = {
       email: loggedInUser.email,
-      sub: loggedInUser.id,
-      roleId: loggedInUser.roleId,
-      type: loggedInUser.role
+      userId: loggedInUser.id,
+      role: loggedInUser.role
     };
     return {
+      user: loggedInUser,
       accessToken: this.jwtService.sign(payload, {
         secret: this.configService.get<string>('jwt.secret'),
         expiresIn: this.configService.get<string>('jwt.expiresIn'),
       }),
       role: loggedInUser.role,
-      type: loggedInUser.role.name,
-      roleId: loggedInUser.roleId,
     };
   }
 }

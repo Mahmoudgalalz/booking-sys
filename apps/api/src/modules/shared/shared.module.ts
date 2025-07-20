@@ -4,11 +4,9 @@ import { ConfigModule } from '@nestjs/config';
 import { Booking } from './entities/bookings.entity';
 import { Provider } from './entities/providers.entity';
 import { TimeSlot } from './entities/time-slots.entity';
-import { Role } from './entities/roles.entity';
 import { Service } from './entities/services.entity';
 import { User } from './entities/users.entity';
 import { UserRepository } from './repositories/user.repository';
-import { RoleRepository } from './repositories/role.repository';
 import { ServiceRepository } from './repositories/service.repository';
 import { TimeSlotRepository } from './repositories/time-slot.repository';
 import { BookingRepository } from './repositories/booking.repository';
@@ -21,7 +19,6 @@ import { FileUploadService } from './upload/upload.service';
     TypeOrmModule.forFeature([
       Booking,
       Provider,
-      Role,
       Service,
       TimeSlot,
       User,
@@ -30,7 +27,6 @@ import { FileUploadService } from './upload/upload.service';
   ],
   providers: [
     UserRepository,
-    RoleRepository,
     ServiceRepository,
     TimeSlotRepository,
     BookingRepository,
@@ -40,7 +36,6 @@ import { FileUploadService } from './upload/upload.service';
   exports: [
     TypeOrmModule,
     UserRepository,
-    RoleRepository,
     ServiceRepository,
     TimeSlotRepository,
     BookingRepository,

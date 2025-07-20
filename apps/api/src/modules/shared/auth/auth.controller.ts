@@ -42,7 +42,7 @@ export class AuthController {
   @Get('profile')
   async getProfile(@User() user: AuthUser) {
     try {
-      const userProfile = await this.authService.getProfile(user.sub);
+      const userProfile = await this.authService.getProfile(user.userId);
       return ResponseUtil.success(userProfile);
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);

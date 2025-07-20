@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { servicesApi, type Service } from '../../lib/api/services-api';
-import { useServiceMutations } from '../../lib/hooks/useServiceMutations';
+import { useProviderServices, useCreateService, useDeleteService, type Service } from '../../api/services';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
@@ -25,19 +23,17 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
     image: '',
   });
 
-  // Get service mutations
-  const { createService, deleteService } = useServiceMutations();
+  // Use the newer API hooks
+  const createServiceMutation = useCreateService();
+  const deleteServiceMutation = useDeleteService();
 
   // Fetch provider services with pagination
-  const servicesQuery = useQuery({
-    queryKey: ['provider-services', currentPage],
-    queryFn: () => servicesApi.getProviderServices(currentPage, 10),
-  });
+  const servicesQuery = useProviderServices(currentPage);
 
   // Handle service deletion
   const handleDeleteService = (serviceId: number) => {
     if (window.confirm('Are you sure you want to delete this service?')) {
-      deleteService.mutate(serviceId);
+      deleteServiceMutation.mutateAsync(serviceId);
     }
   };
 
@@ -61,8 +57,15 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
   // Handle service creation
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
-    createService.mutate(newService, {
-      onSuccess: () => {
+    // Ensure price and duration are valid numbers
+    const serviceData = {
+      ...newService,
+      price: Number(newService.price) || 0, // Convert to number and default to 0 if NaN
+      duration: Number(newService.duration) || 30, // Convert to number and default to 30 if NaN
+    };
+    
+    createServiceMutation.mutateAsync(serviceData)
+      .then(() => {
         setIsAddServiceModalOpen(false);
         setNewService({
           title: '',
@@ -72,8 +75,7 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
           duration: 30,
           image: '',
         });
-      },
-    });
+      });
   };
 
   // Format price for display
@@ -100,9 +102,9 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
         <div className="text-center py-8">Loading services...</div>
       ) : servicesQuery.error ? (
         <div className="text-center py-8 text-red-500">
-          Error loading services. Please try again.
+          Error loading services: {(servicesQuery.error as Error).message}
         </div>
-      ) : servicesQuery.data?.items.length === 0 ? (
+      ) : !servicesQuery.data || !servicesQuery.data.data || servicesQuery.data.data.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-gray-500">You haven't added any services yet.</p>
@@ -116,8 +118,8 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {servicesQuery.data?.items.map((service: Service) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {servicesQuery.data?.data?.map((service) => (
             <Card key={service.id}>
               <CardHeader>
                 <CardTitle>{service.title}</CardTitle>
@@ -148,23 +150,31 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
             ))}
           </div>
           
-          {/* Pagination Controls */}
-          {servicesQuery.data && servicesQuery.data.meta.totalPages > 1 && (
-            <div className="flex justify-center mt-6 space-x-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          {/* Pagination controls */}
+          {servicesQuery.data && servicesQuery.data.meta && servicesQuery.data.meta.lastPage > 1 && (
+            <div className="flex justify-center mt-8 space-x-2">
+              <Button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
+                variant="outline"
               >
                 Previous
               </Button>
-              <span className="py-2 px-4 border rounded">
-                Page {currentPage} of {servicesQuery.data.meta.totalPages}
-              </span>
-              <Button 
-                variant="outline" 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, servicesQuery.data.meta.totalPages))}
-                disabled={currentPage === servicesQuery.data.meta.totalPages}
+              
+              {Array.from({ length: servicesQuery.data.meta.lastPage }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  variant={currentPage === page ? "default" : "outline"}
+                >
+                  {page}
+                </Button>
+              ))}
+              
+              <Button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, servicesQuery.data.meta.lastPage))}
+                disabled={currentPage === servicesQuery.data.meta.lastPage}
+                variant="outline"
               >
                 Next
               </Button>
@@ -178,94 +188,99 @@ export function ServicesTab({ onEditService }: ServicesTabProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Service</DialogTitle>
-            <DialogDescription>
-              Create a new service for your clients to book.
-            </DialogDescription>
+            <DialogDescription>Create a new service to offer to your clients.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateService}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label htmlFor="title" className="text-sm font-medium text-indigo-800">Title</label>
+          
+          <form onSubmit={handleCreateService} className="space-y-4 py-4">
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                Title
+              </label>
+              <Input
+                id="title"
+                name="title"
+                value={newService.title}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <Textarea
+                id="description"
+                name="description"
+                value={newService.description}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                  Price ($)
+                </label>
                 <Input
-                  id="title"
-                  name="title"
-                  value={newService.title}
+                  id="price"
+                  name="price"
+                  type="number"
+                  value={newService.price}
                   onChange={handleInputChange}
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium text-indigo-800">Description</label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={newService.description}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="price" className="text-sm font-medium text-indigo-800">Price ($)</label>
-                  <Input
-                    id="price"
-                    name="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={newService.price}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="duration" className="text-sm font-medium text-indigo-800">Duration (minutes)</label>
-                  <Input
-                    id="duration"
-                    name="duration"
-                    type="number"
-                    min="5"
-                    step="5"
-                    value={newService.duration}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="category" className="text-sm font-medium text-indigo-800">Category</label>
+              
+              <div>
+                <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">
+                  Duration (minutes)
+                </label>
                 <Input
-                  id="category"
-                  name="category"
-                  value={newService.category}
+                  id="duration"
+                  name="duration"
+                  type="number"
+                  value={newService.duration}
                   onChange={handleInputChange}
                   required
                 />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="image" className="text-sm font-medium text-indigo-800">Service Image</label>
-                <div className="flex justify-center">
-                  <FileUpload
-                    onUploadSuccess={handleImageUpload}
-                    label="Upload Service Image"
-                    className="mt-2"
-                  />
-                </div>
-                {newService.image && (
-                  <p className="text-xs text-indigo-600 mt-2">Image uploaded successfully!</p>
-                )}
               </div>
             </div>
+            
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <Input
+                id="category"
+                name="category"
+                value={newService.category}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Image
+              </label>
+              <FileUpload onUploadSuccess={handleImageUpload} />
+            </div>
+            
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddServiceModalOpen(false)}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsAddServiceModalOpen(false)}
+              >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                disabled={createService.isPending}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                disabled={createServiceMutation.isPending}
               >
-                {createService.isPending ? 'Creating...' : 'Create Service'}
+                {createServiceMutation.isPending ? 'Creating...' : 'Create Service'}
               </Button>
             </DialogFooter>
           </form>

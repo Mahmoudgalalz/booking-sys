@@ -1,10 +1,6 @@
 export interface AuthUser {
-    sub: number;
+    userId: number;
     email: string;
     name: string;
-    role: string;
-    roleId: number;
-    type?: {
-        name: string;
-    };
+    role?: string;
 }

@@ -27,10 +27,9 @@ export class BookingsController {
 
   @Post()
   @Roles(RolesEnum.USER)
-  @UseGuards(RolesGuard)
   async create(@Body() createBookingDto: CreateBookingValidation, @User() user: AuthUser) {
     try {
-      const booking = await this.bookingsService.create(createBookingDto, user.sub);
+      const booking = await this.bookingsService.create(createBookingDto, user.userId);
       return ResponseUtil.success(booking, 'Booking created successfully', HttpStatus.CREATED);
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -41,7 +40,7 @@ export class BookingsController {
   @Roles(RolesEnum.USER, RolesEnum.PROVIDER)
   async findMyBookings(@User() user: AuthUser, @Query() pagination: IPaginationOptions) {
     try {
-      const bookings = await this.bookingsService.findByUserId(user.sub, pagination);
+      const bookings = await this.bookingsService.findByUserId(user.userId, pagination);
       return ResponseUtil.success(bookings, 'User bookings retrieved successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -50,10 +49,9 @@ export class BookingsController {
 
   @Get('provider')
   @Roles(RolesEnum.PROVIDER)
-  @UseGuards(RolesGuard)
   async findProviderBookings(@User() user: AuthUser, @Query() pagination: IPaginationOptions) {
     try {
-      const bookings = await this.bookingsService.findByProviderId(user.sub, pagination);
+      const bookings = await this.bookingsService.findByProviderId(user.userId, pagination);
       return ResponseUtil.success(bookings, 'Provider bookings retrieved successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -64,7 +62,7 @@ export class BookingsController {
   @Roles(RolesEnum.USER)
   async cancelBooking(@Param('id') id: string, @User() user: AuthUser) {
     try {
-      const booking = await this.bookingsService.cancel(+id, user.sub, user.role);
+      const booking = await this.bookingsService.cancel(+id, user.userId, user.role as string);
       return ResponseUtil.success(booking, 'Booking cancelled successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);

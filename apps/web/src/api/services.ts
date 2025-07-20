@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { $fetchThrow } from './client';
+import type { ApiResponse } from '../lib/types/auth';
 
 export interface Service {
   id: number;
@@ -9,6 +10,7 @@ export interface Service {
   category: string;
   image: string;
   duration: number;
+  providerId?: number;
   provider: {
     id: number;
     bio: string;
@@ -17,6 +19,24 @@ export interface Service {
       lastName: string;
     };
   };
+}
+
+export interface CreateServiceData {
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  image?: string;
+  duration: number;
+}
+
+export interface UpdateServiceData {
+  title?: string;
+  description?: string;
+  price?: number;
+  category?: string;
+  image?: string;
+  duration?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -29,15 +49,28 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export const useServices = (page: number = 1, search: string = '') => {
+export interface BackendPaginatedResponse<T> {
+  items: T[];
+  meta: {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+  };
+}
+
+export const useServices = (page: number = 1, search: string = '', category: string = '') => {
   return useQuery({
-    queryKey: ['services', page, search],
+    queryKey: ['services', page, search, category],
     queryFn: async () => {
       try {
-        const response = await $fetchThrow<PaginatedResponse<Service>>(
-          `/services?page=${page}&search=${encodeURIComponent(search)}`
-        );
-        return response;
+        let url = `/services?page=${page}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        if (category) url += `&category=${encodeURIComponent(category)}`;
+        
+        const response = await $fetchThrow<ApiResponse<PaginatedResponse<Service>>>(url);
+        return response.data;
       } catch (error) {
         console.error('Failed to fetch services:', error);
         throw error;
@@ -48,13 +81,22 @@ export const useServices = (page: number = 1, search: string = '') => {
   });
 };
 
-export const useProviderServices = () => {
+export const useProviderServices = (page: number = 1) => {
   return useQuery({
-    queryKey: ['provider-services'],
+    queryKey: ['provider-services', page],
     queryFn: async () => {
       try {
-        const response = await $fetchThrow<Service[]>('/providers/services');
-        return response;
+        const response = await $fetchThrow<ApiResponse<BackendPaginatedResponse<Service>>>(`/services/my-services?page=${page}`);
+        // Transform the backend response to match the expected format in the component
+        return {
+          data: response.data.items,
+          meta: {
+            total: response.data.meta.totalItems,
+            currentPage: response.data.meta.currentPage,
+            lastPage: response.data.meta.totalPages,
+            perPage: response.data.meta.itemsPerPage
+          }
+        };
       } catch (error) {
         console.error('Failed to fetch provider services:', error);
         throw error;
@@ -70,8 +112,8 @@ export const useService = (serviceId: number) => {
     queryKey: ['service', serviceId],
     queryFn: async () => {
       try {
-        const response = await $fetchThrow<Service>(`/services/${serviceId}`);
-        return response;
+        const response = await $fetchThrow<ApiResponse<Service>>(`/services/${serviceId}`);
+        return response.data;
       } catch (error) {
         console.error(`Failed to fetch service with ID ${serviceId}:`, error);
         throw error;
@@ -79,5 +121,56 @@ export const useService = (serviceId: number) => {
     },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
+    enabled: !!serviceId,
+  });
+};
+
+export const useCreateService = () => {
+  return useMutation({
+    mutationFn: async (data: CreateServiceData) => {
+      try {
+        const response = await $fetchThrow<ApiResponse<Service>>('/services', {
+          method: 'POST',
+          body: data,
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Failed to create service:', error);
+        throw error;
+      }
+    },
+  });
+};
+
+export const useUpdateService = (serviceId: number) => {
+  return useMutation({
+    mutationFn: async (data: UpdateServiceData) => {
+      try {
+        const response = await $fetchThrow<ApiResponse<Service>>(`/services/${serviceId}`, {
+          method: 'PATCH',
+          body: data,
+        });
+        return response.data;
+      } catch (error) {
+        console.error(`Failed to update service with ID ${serviceId}:`, error);
+        throw error;
+      }
+    },
+  });
+};
+
+export const useDeleteService = () => {
+  return useMutation({
+    mutationFn: async (serviceId: number) => {
+      try {
+        await $fetchThrow<ApiResponse<null>>(`/services/${serviceId}`, {
+          method: 'DELETE',
+        });
+        return serviceId;
+      } catch (error) {
+        console.error(`Failed to delete service with ID ${serviceId}:`, error);
+        throw error;
+      }
+    },
   });
 };

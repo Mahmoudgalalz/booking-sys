@@ -14,33 +14,59 @@ export class SlotsService {
   ) {}
 
   async create(createSlotDto: CreateSlotValidation, providerId: number): Promise<TimeSlot> {
-    // Verify that the service belongs to the provider
     const service = await this.serviceRepository.findOne({
       where: { id: createSlotDto.serviceId, providerId },
     });
-
     if (!service) {
       throw new ForbiddenException('You can only create slots for your own services');
     }
-
+  
     const slot = this.timeSlotRepository.create({
-      ...createSlotDto,
-      isAvailable: true,
+      date: new Date(createSlotDto.date),
+      startTime: new Date(createSlotDto.startTime),
+      endTime: new Date(createSlotDto.endTime),
+      serviceId: createSlotDto.serviceId,
+      available: true,
+      dayOfWeek: createSlotDto.dayOfWeek,
+      isRecurring: createSlotDto.isRecurring || false,
     });
 
     return this.timeSlotRepository.save(slot);
   }
 
-  async findAll(options: IPaginationOptions, serviceId?: number): Promise<Pagination<TimeSlot>> {
+  async findAll(options: IPaginationOptions, serviceId?: number, dayOfWeek?: number): Promise<Pagination<TimeSlot>> {
     const queryBuilder = this.timeSlotRepository.createQueryBuilder('timeSlot')
       .leftJoinAndSelect('timeSlot.service', 'service')
-      .where('timeSlot.isAvailable = :isAvailable', { isAvailable: true });
+      .where('timeSlot.available = :available', { available: true });
     
     if (serviceId) {
       queryBuilder.andWhere('timeSlot.serviceId = :serviceId', { serviceId });
     }
     
+    // Filter by day of week if provided
+    if (dayOfWeek !== undefined) {
+      queryBuilder.andWhere('timeSlot.dayOfWeek = :dayOfWeek', { dayOfWeek });
+    }
+    
     queryBuilder.orderBy('timeSlot.startTime', 'ASC');
+    
+    return paginate<TimeSlot>(queryBuilder, options);
+  }
+  
+  async findAvailableSlotsByDay(serviceId: number, date: Date, options: IPaginationOptions): Promise<Pagination<TimeSlot>> {
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    
+    // Get both specific date slots and recurring slots for this day of week
+    const queryBuilder = this.timeSlotRepository.createQueryBuilder('timeSlot')
+      .leftJoinAndSelect('timeSlot.service', 'service')
+      .where('timeSlot.serviceId = :serviceId', { serviceId })
+      .andWhere('timeSlot.available = :available', { available: true })
+      .andWhere(
+        '(DATE(timeSlot.date) = DATE(:date) OR ' +
+        '(timeSlot.isRecurring = TRUE AND timeSlot.dayOfWeek = :dayOfWeek))'
+      )
+      .setParameters({ date: date.toISOString(), dayOfWeek })
+      .orderBy('timeSlot.startTime', 'ASC');
     
     return paginate<TimeSlot>(queryBuilder, options);
   }
@@ -48,7 +74,7 @@ export class SlotsService {
   async findOne(id: number): Promise<TimeSlot> {
     const slot = await this.timeSlotRepository.findOne({
       where: { id },
-      relations: ['service', 'booking'],
+      relations: ['service', 'bookings'],
     });
     
     if (!slot) {
@@ -71,7 +97,7 @@ export class SlotsService {
     }
     
     // Don't allow updating if the slot is already booked
-    if (slot.bookings) {
+    if (slot.bookings && slot.bookings.length > 0) {
       throw new ForbiddenException('Cannot update a slot that is already booked');
     }
     
@@ -92,7 +118,7 @@ export class SlotsService {
     }
     
     // Don't allow deleting if the slot is already booked
-    if (slot.bookings) {
+    if (slot.bookings && slot.bookings.length > 0) {
       throw new ForbiddenException('Cannot delete a slot that is already booked');
     }
     

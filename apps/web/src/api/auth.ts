@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { $fetchThrow } from './client';
 import { useUserStore } from '../store/userStore';
-import type { AuthResponse, LoginCredentials, RegisterData, ProviderData, User } from '../lib/types/auth';
+import type { LoginCredentials, RegisterData, ProviderData, User, AuthData, ApiResponse } from '../lib/types/auth';
 
 export const useUserProfile = () => {
   const userStore = useUserStore();
@@ -10,17 +10,9 @@ export const useUserProfile = () => {
     queryKey: ['user', 'profile'],
     queryFn: async () => {
       try {
-        const response = await $fetchThrow<AuthResponse>('/auth/profile');
+        const response = await $fetchThrow<ApiResponse<User>>('/auth/profile');
         if (response.success && response.data) {
-          // Extract user info from response data
-          const userData = {
-            id: response.data.roleId, // Using roleId as user id for now
-            email: '', // This might need to be updated based on actual response
-            firstName: '',
-            lastName: '',
-            role: response.data.role
-          };
-          userStore.setUser(userData);
+          userStore.setUser(response.data);
         }
         return response;
       } catch (error) {
@@ -39,9 +31,9 @@ export const useLogin = () => {
   const userStore = useUserStore();
   
   return useMutation({
-    mutationFn: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    mutationFn: async (credentials: LoginCredentials): Promise<ApiResponse<AuthData>> => {
       try {
-        const response = await $fetchThrow<AuthResponse>('/auth/login', {
+        const response = await $fetchThrow<ApiResponse<AuthData>>('/auth/login', {
           method: 'POST',
           body: credentials,
         });
@@ -51,22 +43,18 @@ export const useLogin = () => {
         throw error;
       }
     },
-    onSuccess: (data: AuthResponse) => {
+    onSuccess: (data: ApiResponse<AuthData>) => {
       if (data.success && data.data) {
-        // Extract user info from response data
-        const userData = {
-          id: data.data.roleId, // Using roleId as user id for now
-          email: '', // This might need to be updated based on actual response
-          firstName: '',
-          lastName: '',
-          role: data.data.role
-        };
-        userStore.setUser(userData);
+        userStore.setUser(data.data.user);
         userStore.setToken(data.data.accessToken);
+        
+        // Set provider flag if user has provider role
+        if (data.data.role.name === 'Provider') {
+          userStore.setIsProvider(true);
+        }
         
         // Also store token in localStorage for backward compatibility
         localStorage.setItem('auth_token', data.data.accessToken);
-        console.log('Login successful, token stored:', data.data.accessToken);
       }
     },
   });
@@ -74,11 +62,16 @@ export const useLogin = () => {
 
 export const useRegister = () => {
   const userStore = useUserStore();
+  // Store the password temporarily for login after registration
+  let tempPassword = '';
   
   return useMutation({
-    mutationFn: async (data: RegisterData): Promise<AuthResponse> => {
+    mutationFn: async (data: RegisterData): Promise<ApiResponse<User>> => {
       try {
-        const response = await $fetchThrow<AuthResponse>('/auth/register', {
+        // Store the password temporarily for login after registration
+        tempPassword = data.password;
+        
+        const response = await $fetchThrow<ApiResponse<User>>('/auth/register', {
           method: 'POST',
           body: data,
         });
@@ -88,21 +81,37 @@ export const useRegister = () => {
         throw error;
       }
     },
-    onSuccess: (data: AuthResponse) => {
+    onSuccess: async (data: ApiResponse<User>) => {
       if (data.success && data.data) {
-        // Extract user info from response data
-        const userData = {
-          id: data.data.roleId, // Using roleId as user id for now
-          email: '', // This might need to be updated based on actual response
-          firstName: '',
-          lastName: '',
-          role: data.data.role
-        };
-        userStore.setUser(userData);
-        userStore.setToken(data.data.accessToken);
-        
-        // Also store token in localStorage for backward compatibility
-        localStorage.setItem('auth_token', data.data.accessToken);
+        // After successful registration, we need to login to get the token
+        try {
+          // Use the temporarily stored password for login
+          const loginCredentials: LoginCredentials = {
+            email: data.data.email,
+            password: tempPassword,
+          };
+          
+          // Login to get the token
+          const loginResponse = await $fetchThrow<ApiResponse<AuthData>>('/auth/login', {
+            method: 'POST',
+            body: loginCredentials,
+          });
+          
+          if (loginResponse.success && loginResponse.data) {
+            userStore.setUser(loginResponse.data.user);
+            userStore.setToken(loginResponse.data.accessToken);
+            
+            // Set provider flag if user registered as provider
+            if (loginResponse.data.role.name === 'Provider') {
+              userStore.setIsProvider(true);
+            }
+            
+            // Also store token in localStorage for backward compatibility
+            localStorage.setItem('auth_token', loginResponse.data.accessToken);
+          }
+        } catch (loginError) {
+          console.error('Auto-login after registration failed:', loginError);
+        }
       }
     },
   });
@@ -112,9 +121,9 @@ export const useCompleteProviderProfile = () => {
   const userStore = useUserStore();
   
   return useMutation({
-    mutationFn: async (data: ProviderData): Promise<AuthResponse> => {
+    mutationFn: async (data: ProviderData): Promise<ApiResponse<AuthData>> => {
       try {
-        const response = await $fetchThrow<AuthResponse>('/providers/profile', {
+        const response = await $fetchThrow<ApiResponse<AuthData>>('/providers/profile', {
           method: 'POST',
           body: data,
         });
@@ -124,17 +133,10 @@ export const useCompleteProviderProfile = () => {
         throw error;
       }
     },
-    onSuccess: (data: AuthResponse) => {
+    onSuccess: (data: ApiResponse<AuthData>) => {
       if (data.success && data.data) {
-        // Extract user info from response data
-        const userData = {
-          id: data.data.roleId, // Using roleId as user id for now
-          email: '', // This might need to be updated based on actual response
-          firstName: '',
-          lastName: '',
-          role: data.data.role
-        };
-        userStore.setUser(userData);
+        userStore.setUser(data.data.user);
+        userStore.setIsProvider(true);
       }
     },
   });
@@ -142,12 +144,23 @@ export const useCompleteProviderProfile = () => {
 
 export const logout = () => {
   useUserStore.getState().clearUser();
+  localStorage.removeItem('auth_token');
 };
+
 export const fetchUserProfile = async (): Promise<User | null> => {
   try {
-    const response = await $fetchThrow<AuthResponse>('/auth/profile');
-    useUserStore.getState().setUser(response.user);
-    return response.user;
+    const response = await $fetchThrow<ApiResponse<User>>('/auth/profile');
+    if (response.success && response.data) {
+      useUserStore.getState().setUser(response.data);
+      
+      // Set provider flag if user has provider role
+      if (response.data.role.name === 'Provider') {
+        useUserStore.getState().setIsProvider(true);
+      }
+      
+      return response.data;
+    }
+    return null;
   } catch (error) {
     console.error('Failed to fetch user profile:', error);
     return null;

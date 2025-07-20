@@ -31,7 +31,7 @@ export class ServicesController {
   @Roles(RolesEnum.PROVIDER)
   async create(@Body() createServiceDto: CreateServiceValidation, @User() user: AuthUser) {
     try {
-      const service = await this.servicesService.create(createServiceDto, user.sub);
+      const service = await this.servicesService.create(createServiceDto, user.userId);
       return ResponseUtil.success(service, 'Service created successfully', HttpStatus.CREATED);
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -40,10 +40,10 @@ export class ServicesController {
 
   @Get()
   @Roles(RolesEnum.PROVIDER, RolesEnum.USER)
-  async findAll(@Query() pagination: IPaginationOptions,
+  async findAll(@User() user: AuthUser, @Query() pagination: IPaginationOptions,
     @Query('category') category?: string, @Query('search') search?: string) {
     try {
-      const services = await this.servicesService.findAll(pagination, category, search);
+      const services = await this.servicesService.findAll(user.userId, pagination, category, search);
       return ResponseUtil.success(services, 'Services retrieved successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -68,7 +68,7 @@ export class ServicesController {
     @User() user: AuthUser,
   ) {
     try {
-      const service = await this.servicesService.update(+id, updateServiceDto, user.sub);
+      const service = await this.servicesService.update(+id, updateServiceDto, user.userId);
       return ResponseUtil.success(service, 'Service updated successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -79,7 +79,7 @@ export class ServicesController {
   @Roles(RolesEnum.PROVIDER)
   async remove(@Param('id') id: string, @User() user: AuthUser) {
     try {
-      await this.servicesService.remove(+id, user.sub);
+      await this.servicesService.remove(+id, user.userId);
       return ResponseUtil.success(null, 'Service deleted successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);

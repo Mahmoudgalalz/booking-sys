@@ -3,11 +3,10 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: {
-    id: number;
-    name: string;
-  };
+  role: Role;
 }
+
+export type Role = 'provider' | 'user';
 
 export interface LoginCredentials {
   email: string;
@@ -19,7 +18,7 @@ export interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
-  roleId: number;
+  role: Role;
 }
 
 export interface ProviderData {
@@ -38,15 +37,8 @@ export interface ApiResponse<T> {
 
 export interface AuthData {
   accessToken: string;
-  role: {
-    id: number;
-    name: string;
-    description: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-  type: string;
-  roleId: number;
+  user: User;
+  role: Role;
 }
 
 export type AuthResponse = ApiResponse<AuthData>;

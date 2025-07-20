@@ -4,11 +4,11 @@ import {
   MinLength,
   IsEmail,
   IsOptional,
-  IsNumber,
+  IsEnum,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { isExists } from '../../decorators/validation/rules/exists.decorator';
 import { isUnique } from '../../decorators/validation/rules/unique.decorator';
+import { RolesEnum } from '../../enums/roles.enum';
 
 export class RegisterValidation {
   @IsString()
@@ -30,7 +30,6 @@ export class RegisterValidation {
   @MinLength(6)
   password: string;
 
-  @IsNumber()
-  @isExists({ tableName: 'roles', column: 'id' })
-  roleId: number;
+  @IsEnum(RolesEnum)
+  role: RolesEnum;
 }

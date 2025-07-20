@@ -14,7 +14,7 @@ export default function MainLayout({
 }: MainLayoutProps) {
   const user = useUserStore.getState().user;
   const isAuthenticated = user !== null;
-  const isProvider = user?.role?.name === 'provider';
+  const isProvider = user?.role === 'provider';
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -27,12 +27,6 @@ export default function MainLayout({
               
               {isAuthenticated && (
                 <nav className="hidden md:flex space-x-6">
-                  <a 
-                    href="/" 
-                    className="text-gray-600 hover:text-indigo-600 transition-colors"
-                  >
-                    Home
-                  </a>
                   {isProvider ? (
                     <>
                       <a 
@@ -49,12 +43,20 @@ export default function MainLayout({
                       </a>
                     </>
                   ) : (
-                    <a 
-                      href="/bookings" 
-                      className="text-gray-600 hover:text-indigo-600 transition-colors"
-                    >
-                      My Bookings
-                    </a>
+                    <>
+                      <a 
+                        href="/home" 
+                        className="text-gray-600 hover:text-indigo-600 transition-colors"
+                      >
+                        Home
+                      </a>
+                      <a 
+                        href="/bookings" 
+                        className="text-gray-600 hover:text-indigo-600 transition-colors"
+                      >
+                        My Bookings
+                      </a>
+                    </>
                   )}
                 </nav>
               )}

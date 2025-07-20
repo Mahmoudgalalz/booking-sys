@@ -43,7 +43,7 @@ import { ScheduleModule } from '@nestjs/schedule';
         password: configService.get('database.password'),
         database: configService.get('database.database'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('database.synchronize'),
+        synchronize: true,
       }),
     }),
     ScheduleModule.forRoot(),

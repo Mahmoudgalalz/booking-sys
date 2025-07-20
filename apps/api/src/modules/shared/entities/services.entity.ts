@@ -4,12 +4,14 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   JoinColumn,
   OneToMany,
 } from 'typeorm';
 import { TimeSlot } from './time-slots.entity';
 import { Provider } from './providers.entity';
+import { Booking } from './bookings.entity';
 
 @Entity('services')
 export class Service {
@@ -22,11 +24,11 @@ export class Service {
   @Column('text')
   description: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  price: number;
-
   @Column()
   category: string;
+
+  @Column({ default: 60 }) // Duration in minutes
+  duration: number;
 
   @Column({ nullable: true })
   image: string;
@@ -34,14 +36,17 @@ export class Service {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ default: 60 }) // Duration in minutes
-  duration: number;
+  @Column('jsonb', { nullable: true })
+  metadata: Record<string, any>;
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   // Relations
   @ManyToOne(() => Provider, (provider) => provider.services)
@@ -53,4 +58,7 @@ export class Service {
 
   @OneToMany(() => TimeSlot, (timeSlot) => timeSlot.service)
   timeSlots: TimeSlot[];
+
+  @OneToMany(() => Booking, (booking) => booking.service)
+  bookings: Booking[];
 }

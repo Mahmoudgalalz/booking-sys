@@ -28,7 +28,7 @@ export class ProvidersController {
   @Roles(RolesEnum.PROVIDER)
   async createProfile(@Body() createProfileDto: CreateProviderProfileDto, @User() user: AuthUser) {
     try {
-      const profile = await this.providersService.createProfile(createProfileDto, user.sub);
+      const profile = await this.providersService.createProfile(createProfileDto, user.userId);
       return ResponseUtil.success(profile, 'Provider profile created successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -39,7 +39,7 @@ export class ProvidersController {
   @Roles(RolesEnum.PROVIDER)
   async updateProfile(@Body() updateProfileDto: UpdateProviderProfileDto, @User() user: AuthUser) {
     try {
-      const profile = await this.providersService.updateProfile(updateProfileDto, user.sub);
+      const profile = await this.providersService.updateProfile(updateProfileDto, user.userId);
       return ResponseUtil.success(profile, 'Provider profile updated successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -50,7 +50,7 @@ export class ProvidersController {
   @Roles(RolesEnum.PROVIDER)
   async getProfile(@User() user: AuthUser) {
     try {
-      const profile = await this.providersService.getProfile(user.sub);
+      const profile = await this.providersService.getProfile(user.userId);
       return ResponseUtil.success(profile, 'Provider profile retrieved successfully');
     } catch (err) {
       return ResponseUtil.error(err.message, HttpStatus.INTERNAL_SERVER_ERROR);

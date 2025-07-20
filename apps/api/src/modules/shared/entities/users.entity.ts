@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Booking } from './bookings.entity';
 import { Provider } from './providers.entity';
-import { Role } from './roles.entity';
+import { RolesEnum } from '../enums/roles.enum';
 
 @Entity('users')
 export class User {
@@ -39,20 +39,11 @@ export class User {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => Role, (role) => role.users)
-  @JoinColumn({ name: 'roleId' })
-  role: Role;
-
-  @Column()
-  roleId: number;
+  @Column({ type: 'enum', enum: RolesEnum, default: RolesEnum.USER })
+  role: RolesEnum;
 
   @OneToMany(() => Provider, (provider) => provider.user)
   providers: Provider[];
-  
-  // Virtual getter for full name
-  get name(): string {
-    return `${this.firstName} ${this.lastName}`;
-  }
 
   @OneToMany(() => Booking, (booking) => booking.user)
   bookings: Booking[];

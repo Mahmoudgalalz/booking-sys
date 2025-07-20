@@ -1,11 +1,11 @@
 import { useForm } from '@tanstack/react-form';
-import type { RegisterData } from '../../../lib/types/auth';
+import type { RegisterData, Role } from '../../../lib/types/auth';
 
 interface BasicInfoFormProps {
   onSubmit: (data: RegisterData) => void;
   isLoading: boolean;
   error: Error | null;
-  selectedRole: number;
+  selectedRole: Role;
   onBack: () => void;
 }
 
@@ -22,16 +22,16 @@ export function BasicInfoForm({
       lastName: '',
       email: '',
       password: '',
-      roleId: selectedRole || 1,
+      role: selectedRole,
     },
     onSubmit: async ({ value }) => {
-      onSubmit(value);
+      onSubmit({ ...value });
     },
   });
 
   return (
-    <div className="w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-indigo-800">Create your account</h2>
+    <div className="w-full max-w-sm">
+      <h2 className="text-center text-2xl font-bold leading-9 tracking-tight text-indigo-800">Create your account</h2>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -62,7 +62,7 @@ export function BasicInfoForm({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                   <div className="text-red-500 text-sm mt-1">
@@ -96,7 +96,7 @@ export function BasicInfoForm({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                   <div className="text-red-500 text-sm mt-1">
@@ -132,7 +132,7 @@ export function BasicInfoForm({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                   <div className="text-red-500 text-sm mt-1">
@@ -167,7 +167,7 @@ export function BasicInfoForm({
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
                 {field.state.meta.errors && field.state.meta.errors.length > 0 && (
                   <div className="text-red-500 text-sm mt-1">
@@ -179,37 +179,38 @@ export function BasicInfoForm({
           </form.Field>
         </div>
         
-        <form.Field name="roleId">
+        <form.Field name="role">
           {(field) => (
             <input
               type="hidden"
-              name="roleId"
-              value={selectedRole || 1}
-              onChange={(e) => field.handleChange(parseInt(e.target.value))}
+              name="role"
+              value={selectedRole || 'user'}
+              onChange={(e) => field.handleChange(e.target.value as Role)}
             />
           )}
         </form.Field>
         
-        <div className="flex justify-between pt-4">
+        <div className="flex justify-between mt-6">
           <button
             type="button"
             onClick={onBack}
-            className="px-4 py-2 border border-indigo-300 rounded-md hover:bg-indigo-50 text-indigo-700 transition-colors"
+            className="flex w-1/3 justify-center rounded-md bg-gray-200 px-3 py-1.5 text-sm font-semibold leading-6 text-gray-700 shadow-sm hover:bg-gray-300 focus-visible:outline-offset-2 focus-visible:outline-gray-300"
+            disabled={isLoading}
           >
             Back
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            className="flex w-2/3 justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
-            {isLoading ? 'Signing up...' : 'Continue'}
+            {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
         </div>
         
         {error && (
-          <div className="text-red-500 text-sm mt-2">
-            {error.message || 'An error occurred during signup'}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mt-4">
+            <span className="block sm:inline">{error.message}</span>
           </div>
         )}
       </form>

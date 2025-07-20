@@ -17,6 +17,6 @@ export const dataSource = new DataSource({
   entities: [entitiesPath],
   migrations: [migrationsPath],
   migrationsTableName: 'migrations',
-  synchronize: false,
+  synchronize: true,
   logging: true,
 });

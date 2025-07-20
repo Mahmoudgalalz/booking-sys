@@ -20,4 +20,13 @@ export class FileUploadService {
     const baseUrl = this.configService.get<string>('system.baseUrl');
     return `${baseUrl}/uploads/${fileName}`;
   }
+
+  async getFile(filename: string): Promise<Buffer> {
+    const uploadDir = this.configService.get<string>('system.uploadPath') ?? './uploads';
+    const filePath = path.join(uploadDir, filename);
+    if (!fs.existsSync(filePath)) {
+      throw new Error('File not found');
+    }
+    return fs.readFileSync(filePath);
+  }
 }
